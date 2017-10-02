@@ -25,7 +25,7 @@ for i in $general;do
 	bvec=$(echo ${i}DTI_MultiShell_117dir/nifti/*.bvec)
 	
 # Round bvals up or down 5, corrects for scanner output error in bvals	
-	/home/melliott/scripts/bval_rounder.sh $unroundedbval /data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/QA/roundedbval.bval 100
+	./bval_rounder.sh $unroundedbval /data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/QA/roundedbval.bval 100
 # Get quality assurance metrics on DTI data for each shell
 	~/qa_dti_v3.sh $inputnifti /data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/QA/roundedbval.bval $bvec /data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/QA/dwi.qa
 # Extract b0 from anterior to posterior phase-encoded input nifti for topup calculation
