@@ -29,7 +29,7 @@ for i in $general;do
 # Get quality assurance metrics on DTI data for each shell
 	~/qa_dti_v3.sh $inputnifti /data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/QA/roundedbval.bval $bvec /data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/QA/dwi.qa
 # Extract b0 from anterior to posterior phase-encoded input nifti for topup calculation
-	fslroi $inputnifti /data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/Intermediates/nodif_AP 0 1f
+	fslroi $inputnifti /data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/Intermediates/nodif_AP 0 1
 # Extract b0 from P>A topup ref for topup calculation
 	fslroi $topupref /data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/Intermediates/nodif_PA 0 1
 # Merge b0s for topup calculation
