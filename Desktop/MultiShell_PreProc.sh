@@ -42,7 +42,7 @@ for i in $general;do
 	bet mean_iout.nii.gz bet_iout -m
 # Create index for eddy to know which acquisition parameters apply to which volumes.(Original usage only correcting A>P, only using one set of acq params.
 	echo $indx > index.txt
-# Run eddy correction. Corrects for Electromagnetic-pulse induced distortions. Most computationally intensive of anything here, takes 1-3 hours. More recent eddy correction available in more recent FSL versions
+# Run eddy correction. Corrects for Electromagnetic-pulse induced distortions. Most computationally intensive of anything here, can take >5 hours. More recent eddy correction available in more recent FSL versions
 	/share/apps/fsl/5.0.5/bin/eddy --imain=topup_applied.nii.gz --mask=bet_iout.nii.gz --index=index.txt --acqp=$1 --bvecs=$bvec --bvals=roundedbval.bval --out=eddied
 
 done
