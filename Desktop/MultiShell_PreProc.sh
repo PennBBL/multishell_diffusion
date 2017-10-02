@@ -11,7 +11,7 @@
 
 #assumed that you're only correcting one set of volumes (A>P phase encoded in original usage)
 
-general=/data/joy/BBL/studies/grmpy/rawData/127611/20170107x10445/
+general=/data/joy/BBL/studies/grmpy/rawData/127611/*/
 acqp=$1
 indx=""	
 for ((i=1; i<119; i+=1)); do indx="$indx 1"; done
