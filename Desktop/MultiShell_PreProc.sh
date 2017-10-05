@@ -51,5 +51,3 @@ for i in $general;do
 	echo $indx > index.txt
 # Run eddy correction. Corrects for Electromagnetic-pulse induced distortions. Most computationally intensive of anything here, has taken >5 hours. More recent eddy correction available in more recent FSL versions
 	/share/apps/fsl/5.0.5/bin/eddy --imain=$out/Intermediates/topup_applied.nii.gz --mask=$out/Intermediates/bet_iout.nii.gz --index=index.txt --acqp=$1 --bvecs=$bvec --bvals=roundedbval.bval --out=$out/eddied
-
-done
