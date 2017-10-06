@@ -13,7 +13,7 @@
 
 #eddy step requires more memory than default allocation of 3 G of RAM. Use at least -l h_vmem=3.5,s_vmem=3
 
-general=/data/joy/BBL/studies/grmpy/rawData/*/*/
+general=/data/joy/BBL/studies/grmpy/rawData/106880/*/
 scripts=/home/melliott/scripts
 acqp=$1
 indx=""	
@@ -34,7 +34,7 @@ for i in $general;do
 	$scripts/bval_rounder.sh $unroundedbval $out/QA/roundedbval.bval 100
 # Get quality assurance metrics on DTI data for each shell
 	$scripts/qa_dti_v3.sh $inputnifti $out/QA/roundedbval.bval $bvec $out/QA/dwi.qa
-# Extract b0 from anterior to posterior phase-encoded input nifti for topup calculation
+# Extract b0 from anterior to posterior phase-encoded input nifti for topup calculation	
 	fslroi $inputnifti $out/Intermediates/nodif_AP 0 1
 # Extract b0 from P>A topup ref for topup calculation
 	fslroi $topupref $out/Intermediates/nodif_PA 0 1
@@ -51,4 +51,6 @@ for i in $general;do
 # Create index for eddy to know which acquisition parameters apply to which volumes.(Original usage only correcting A>P, only using one set of acq params.
 	echo $indx > index.txt
 # Run eddy correction. Corrects for Electromagnetic-pulse induced distortions. Most computationally intensive of anything here, has taken >5 hours. More recent eddy correction available in more recent FSL versions
-	/share/apps/fsl/5.0.5/bin/eddy --imain=$out/Intermediates/topup_applied.nii.gz --mask=$out/Intermediates/bet_iout.nii.gz --index=index.txt --acqp=$1 --bvecs=$bvec --bvals=roundedbval.bval --out=$out/eddied
+	/share/apps/fsl/5.0.5/bin/eddy --imain=$out/Intermediates/topup_applied.nii.gz --mask=$out/Intermediates/bet_iout.nii.gz --index=index.txt --acqp=$1 --bvecs=$bvec --bvals=$out/QA/roundedbval.bval --out=$out/eddied
+
+done
