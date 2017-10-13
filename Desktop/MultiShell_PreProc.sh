@@ -13,7 +13,7 @@
 
 #eddy step requires more memory than default allocation of 3 G of RAM. Use at least -l h_vmem=3.5,s_vmem=3
 
-general=/data/joy/BBL/studies/grmpy/rawData/110828/*/
+general=/data/joy/BBL/studies/grmpy/rawData/*/*/
 scripts=/home/melliott/scripts
 acqp=$1
 indx=""	
