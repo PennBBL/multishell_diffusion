@@ -55,7 +55,7 @@ for i in $general;do
 	/share/apps/fsl/5.0.5/bin/eddy --imain=$out/Topup/topup_applied.nii.gz --mask=$out/Topup/bet_iout_point_2.nii.gz --index=index.txt --acqp=$1 --bvecs=$bvec --bvals=$out/QA/roundedbval.bval --out=$out/eddied
 
 # re-bet eddy output
-	bet $out/eddied_point_2.nii.gz $out/eddied_bet_2.nii.gz -f 0.2
+	bet $out/eddied.nii.gz $out/eddied_bet_2.nii.gz -f 0.2
 
 # make white matter only mask from segmented T1 in prep for flirt BBR
         fslmaths /data/joy/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/*/antsCT/*_BrainSegmentation.nii.gz -thr 3 -uthr 3 $out/Transforms/Struct_WM.nii.gz
