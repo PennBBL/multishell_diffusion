@@ -53,19 +53,14 @@ for i in $general;do
 	echo $indx > index.txt
 # Run eddy correction. Corrects for Electromagnetic-pulse induced distortions. Most computationally intensive of anything here, has taken >5 hours. More recent eddy correction available in more recent FSL versions
 	/share/apps/fsl/5.0.5/bin/eddy --imain=$out/Topup/topup_applied.nii.gz --mask=$out/Topup/bet_iout_point_2.nii.gz --index=index.txt --acqp=$1 --bvecs=$bvec --bvals=$out/QA/roundedbval.bval --out=$out/eddied
-
 # re-bet eddy output
-	bet $out/eddied.nii.gz $out/eddied_bet_2.nii.gz -f 0.2
-
+	bet $out/eddied.nii.gz $out/eddied_bet_2.nii.gz -c 70 70 46 -R -m -f 0.2
 # make white matter only mask from segmented T1 in prep for flirt BBR
         fslmaths /data/joy/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/*/antsCT/*_BrainSegmentation.nii.gz -thr 3 -uthr 3 $out/Transforms/Struct_WM.nii.gz
-
 # use flirt to calculate diffusion -> structural translation 
 	flirt -cost bbr -wmseg $out/Transforms/Struct_WM.nii.gz -in $out/eddied_bet_2.nii.gz -ref /data/joy/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/*/antsCT/*ExtractedBrain0N4.nii.gz -out $out/Transforms/flirt_BBR -dof 6 -omat $out/Transforms/MultiShDiff2StructFSL.mat
-
 # Convert FSL omat to Ras
 	c3d_affine_tool -src $out/eddied_bet_2.nii.gz -ref /data/joy/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/*/antsCT/*ExtractedBrain0N4.nii.gz $out/Transforms/MultiShDiff2StructFSL.mat -fsl2ras -oitk $out/Transforms/MultiShDiff2StructRas.mat
-
 # Use Subject to template warp and affine from grmpy directory after Ras diffusion -> structural space affine to put eddied_bet_2 onto pnc template
 	antsApplyTransforms -e 3 -d 3 -i $out/eddied_bet_2.nii.gz -r /data/joy/BBL/studies/pnc/template/pnc_template_brain.nii.gz -o $out/Transforms/eddied_b0_template_space.nii.gz -t /data/joy/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/*/antsCT/*SubjectToTemplate1Warp.nii.gz -t /data/joy/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/*/antsCT/*SubjectToTemplate0GenericAffine.mat -t $out/Transforms/MultiShDiff2StructRas.mat
 
