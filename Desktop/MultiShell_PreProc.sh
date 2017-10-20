@@ -17,6 +17,13 @@ general=/data/joy/BBL/studies/grmpy/rawData/*/*/
 scripts=/home/melliott/scripts
 acqp=$1
 indx=""	
+
+# For AMICO/NODDI Running (via pcook)
+
+matlab -nodisplay -r "run '/data/joy/BBL/projects/multishell_diffusion/multishell_diffusionScripts/amicoSYRP/scripts/amicoGlobalInitialize.m'"
+
+#wrapper
+
 for ((i=1; i<119; i+=1)); do indx="$indx 1"; done
 
 for i in $general;do 
