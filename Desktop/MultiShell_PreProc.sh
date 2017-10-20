@@ -38,7 +38,8 @@ for i in $general;do
 	mkdir /data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/$bblIDs/Topup
 	mkdir /data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/$bblIDs/Transforms
 	out=/data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/$bblIDs
-	
+# Import bvec
+	cp $unroundedbval $out/QA/bvec.bvec	
 # Round bvals up or down 5, corrects for scanner output error in bvals	
 	$scripts/bval_rounder.sh $unroundedbval $out/QA/roundedbval.bval 100
 # Get quality assurance metrics on DTI data for each shell
