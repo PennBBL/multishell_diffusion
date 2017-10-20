@@ -21,6 +21,7 @@ indx=""
 # For AMICO/NODDI Running (via pcook)
 
 matlab -nodisplay -r "run '/data/joy/BBL/projects/multishell_diffusion/multishell_diffusionScripts/amicoSYRP/scripts/amicoGlobalInitialize.m'"
+exit
 
 #wrapper
 
