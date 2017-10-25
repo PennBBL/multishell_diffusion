@@ -63,16 +63,16 @@ acqp=/data/joy/BBL/projects/multishell_diffusion/processedData/acqpars.txt
 	# Add Mark Elliot's qa script path
 	PATH=$PATH:/home/melliott/scripts
 
-	# Import bval and bvec because I don't know how to wildcard in perl in generateAmicoM_AP.pl later on
+	# Import bval and bvec
 	cp $unroundedbval $out/prestats/qa/
 	cp $bvec $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_bvec.bvec
 	mv $out/prestats/qa/*.bvec $out/prestats/qa/
 
 	# Round bvals up or down 5, corrects for scanner output error in bvals (not needed in v4)
-	#$scripts/bval_rounder.sh $unroundedbval $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval 100
+	$scripts/bval_rounder.sh $unroundedbval $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval 100
 
 	# Get quality assurance metrics on DTI data for each shell
-	$scripts/qa_dti_v4.sh $inputnifti $unroundedbval $bvec 100 $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_dwi.qa 
+	#$scripts/qa_dti_v4.sh $inputnifti $unroundedbval $bvec 100 $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_dwi.qa 
 
 	###########################################################
 	##              DISTORTION/MOTION CORRECTION             ##
@@ -158,7 +158,7 @@ acqp=/data/joy/BBL/projects/multishell_diffusion/processedData/acqpars.txt
 
 	# Run Amico
 	# runAmicoScript=/data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/AMICO/runAMICO.m
-	/data/joy/BBL/projects/multishell_diffusion/multishell_diffusionScripts/amicoSYRP/scripts/runAmico_AP.sh /data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/AMICO/runAMICO.m
+	/data/joy/BBL/projects/multishell_diffusion/multishell_diffusionScripts/amicoSYRP/scripts/runAmico_.sh /data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/AMICO/runAMICO.m
 
 	#pushd /data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/AMICO/
 	#matlab -nosplash -nodesktop -r "runAMICO.m; exit()"
