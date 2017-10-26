@@ -69,7 +69,6 @@ acqp=/data/joy/BBL/projects/multishell_diffusion/processedData/acqpars.txt
 
 	# Round bvals up or down 5, corrects for scanner output error in bvals (not needed in v4)
 	$scripts/bval_rounder.sh $unroundedbval $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval 100
-	echo $unroundedbval
 
 	# Get quality assurance metrics on DTI data for each shell
 	$scripts/qa_dti_v3.sh $inputnifti $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval $bvec $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_dwi.qa 	

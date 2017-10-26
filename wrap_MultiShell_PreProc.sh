@@ -1,6 +1,6 @@
-#!/bin/bash
+s#!/bin/bash
 
-general=/data/joy/BBL/studies/grmpy/rawData/127417/*/
+general=/data/joy/BBL/studies/grmpy/rawData/*/*/
 
 for i in $general;do 
 	bblIDs=$(echo ${i}|cut -d'/' -f8 |sed s@'/'@' '@g);
