@@ -1,6 +1,6 @@
 #!/bin/bash
 
-general=/data/joy/BBL/studies/grmpy/rawData/*/*/
+general=/data/joy/BBL/studies/grmpy/rawData/127417/*/
 
 for i in $general;do 
 	bblIDs=$(echo ${i}|cut -d'/' -f8 |sed s@'/'@' '@g);
@@ -11,17 +11,21 @@ for i in $general;do
 	## Setup AMICO/NODDI (via pcook)				
 	matlab -nodisplay -r 'run /data/joy/BBL/projects/multishell_diffusion/multishell_diffusionScripts/amicoSYRP/scripts/amicoGlobalInitialize.m' -r 'exit' 
 
-
+	# Remove old output
+	
+	rm -r /data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/
+	
 	## Create log directory
+
 	logDir=/data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/logfiles
 	mkdir -p ${logDir}
 
 	## Write subject-specific script for qsub
 	var0="pushd /data/joy/BBL/projects/multishell_diffusion/multishell_diffusionScripts/; ./MultiShell_PreProc.sh ${bblIDs} ${SubDate_and_ID}; popd"
 
-	echo -e "${var0}" >> ${logDir}/run_MultiShell_PreProc_"${bblid}"_"${dateid}"x"${scanid}".sh
+	echo -e "${var0}" > ${logDir}/run_MultiShell_PreProc_"${bblIDs}"_"${SubDate_and_ID}".sh
 
-	subject_script=${logDir}/run_MultiShell_PreProc_"${bblid}"_"${dateid}"x"${scanid}".sh
+	subject_script=${logDir}/run_MultiShell_PreProc_"${bblIDs}"_"${SubDate_and_ID}".sh
 	
 	# chmod 775 ${subject_script}
  	
