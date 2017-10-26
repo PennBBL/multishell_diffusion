@@ -150,9 +150,9 @@ acqp=/data/joy/BBL/projects/multishell_diffusion/processedData/acqpars.txt
 
 	#fslmaths ${eddy_output} -mas $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_seqSpaceT1Mask.nii.gz $eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_t1MaskedG.nii.gz
 
-	######################################################################################################################################################
-	###                AMICO/NODDI (as well as global initialize @ top, but only needs to be run once loop)                                             ## 
-	######################################################################################################################################################
+	########################################################
+	###                AMICO/NODDI			     ###
+	########################################################
 
 	# Generate Amico scheme (edit paths for files like mask and eddy output in generateAmicoM script)
 	/data/joy/BBL/projects/multishell_diffusion/multishell_diffusionScripts/amicoSYRP/scripts/generateAmicoM_AP.pl $bblIDs $SubDate_and_ID
