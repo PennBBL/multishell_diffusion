@@ -77,19 +77,19 @@ acqp=/data/joy/BBL/projects/multishell_diffusion/processedData/acqpars.txt
 	#$scripts/qa_dti_v4.sh $inputnifti $unroundedbval $bvec 100 $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_dwi.qa 
 	
 	# Rename clipmask
-	clipMask=$(ls ${out}/prestats/qa/*clipmask.nii)
-	filename=$(echo $clipMask | cut -f 1 -d '.')
+	clipMask=$(ls ${out}/prestats/qa/*clipmask.nii.gz)
+	cfilename=$(echo ${clipMask#$out/prestats/qa/})
 
-	mv ${clipmask} ${out}/prestats/qa/${bblIDs}_${SubDate_and_ID}_${filename}.nii
+	mv ${clipMask} ${out}/prestats/qa/${bblIDs}_${SubDate_and_ID}_${cfilename}
 
 	## Rename qa mask
-	qaMask=$(ls ${out}/prestats/qa/*qamask.nii)
-	filename=$(echo $qaMask | cut -f 1 -d '.')
+	qaMask=$(ls ${out}/prestats/qa/*qamask.nii.gz)
+	qfilename=$(echo ${qaMask#$out/prestats/qa/})
 
-	mv ${qaMask} ${out}/prestats/qa/${bblIDs}_${SubDate_and_ID}_${filename}.nii
+	mv ${qaMask} ${out}/prestats/qa/${bblIDs}_${SubDate_and_ID}_${qfilename}
 
 	## Zip all nifti files
-	gzip ${out}/prestats/qa/*.nii
+	gzip -f ${out}/prestats/qa/*.nii
 	
 
 	###########################################################
