@@ -129,11 +129,11 @@ acqp=/data/joy/BBL/projects/multishell_diffusion/processedData/acqpars.txt
 	eddy_output=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied.nii.gz
 	
 	# Mask eddy output using topup mask, make first b0 only for coreg
-	fslmaths ${eddy_output} -mas $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_bet_mean_iout_point_2_mask.nii.gz $eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_topupMaskedG.nii.gz
+	fslmaths ${eddy_output} -mas $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_bet_mean_iout_point_2_mask.nii.gz $eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked.nii.gz
 
-	fslroi $eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_topupMaskedG.nii.gz $eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked_b0G.nii.gz 0 1
+	fslroi $eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked.nii.gz $eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked_b0.nii.gz 0 1
 	 	
-	 masked_b0=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked_b0G.nii.gz
+	 masked_b0=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked_b0.nii.gz
 
 
 	# ROTATE BVECS WITH eddy OUTPUT
@@ -153,17 +153,17 @@ acqp=/data/joy/BBL/projects/multishell_diffusion/processedData/acqpars.txt
 	c3d_affine_tool -src ${masked_b0} -ref /data/joy/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/${SubDate_and_ID}/antsCT/*ExtractedBrain0N4.nii.gz $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructFSL.mat -fsl2ras -oitk $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat
 
 	# Use Subject to template warp and affine from grmpy directory after Ras diffusion -> structural space affine to put eddied_bet_2 onto pnc template
-	antsApplyTransforms -e 3 -d 3 -i ${masked_b0} -r /data/joy/BBL/studies/pnc/template/pnc_template_brain_2mm.nii.gz -o $out/norm/${bblIDs}_${SubDate_and_ID}_eddied_b0_template_spaceG.nii.gz -t /data/joy/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate1Warp.nii.gz -t /data/joy/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate0GenericAffine.mat -t $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat
+	antsApplyTransforms -e 3 -d 3 -i ${masked_b0} -r /data/joy/BBL/studies/pnc/template/pnc_template_brain_2mm.nii.gz -o $out/coreg/${bblIDs}_${SubDate_and_ID}_eddied_b0_template_space.nii.gz -t /data/joy/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate1Warp.nii.gz -t /data/joy/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate0GenericAffine.mat -t $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat
 
-	#T ake T1 generated mask to sequence (diffusion) space
+	# Take T1 generated mask to sequence (diffusion) space
 	antsApplyTransforms -e 3 -d 3 -i /data/joy/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/${bblIDs}_${SubDate_and_ID}_BrainExtractionMask.nii.gz -r /data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/prestats/eddy/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked_b0G.nii.gz -o $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_seqSpaceT1Mask.nii.gz -t [/data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat,1] -n NearestNeighbor
 
 	# Binarize Mask - not sure why it doesn't come out binarized... very small edge spaces with values b/w 0-1
-	fslmaths $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_seqSpaceT1Mask.nii.gz -thr .1 -bin $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_seqSpaceT1Mask.nii.gz
+	#fslmaths $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_seqSpaceT1Mask.nii.gz -thr .1 -bin $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_seqSpaceT1Mask.nii.gz
 
 	#remask eddy output using T1 space generated mask
 
-	#fslmaths ${eddy_output} -mas $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_seqSpaceT1Mask.nii.gz $eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_t1MaskedG.nii.gz
+	#fslmaths ${eddy_output} -mas $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_seqSpaceT1Mask.nii.gz $eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_t1Masked.nii.gz
 
 	########################################################
 	###                AMICO/NODDI			     ###
@@ -208,8 +208,10 @@ acqp=/data/joy/BBL/projects/multishell_diffusion/processedData/acqpars.txt
 	# OD -> Template
 	antsApplyTransforms -e 3 -d 3 -i $NODDIdir/${bblIDs}_${SubDate_and_ID}_FIT_OD.nii.gz -r /data/joy/BBL/studies/pnc/template/pnc_template_brain_2mm.nii.gz -o $out/norm/${bblIDs}_${SubDate_and_ID}_FIT_OD_Std.nii.gz -t /data/joy/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate1Warp.nii.gz -t /data/joy/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate0GenericAffine.mat -t $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat
 
-	# Add Simlink
+	# Add Simlinks
 	ln -s /data/joy/BBL/studies/pnc/template/pnc_template_brain_2mm.nii.gz $out/norm/
+	ln -s /data/joy/BBL/studies/pnc/template/pnc_template_brain_2mm.nii.gz $out/coreg/
+	ln -s $eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked_b0.nii.gz $out/coreg
 
 	###################################
 	###         Cleanup             ###
