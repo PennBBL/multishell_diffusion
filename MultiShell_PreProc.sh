@@ -212,6 +212,8 @@ acqp=/data/joy/BBL/projects/multishell_diffusion/processedData/acqpars.txt
 	ln -s /data/joy/BBL/studies/pnc/template/pnc_template_brain_2mm.nii.gz $out/norm/
 	ln -s /data/joy/BBL/studies/pnc/template/pnc_template_brain_2mm.nii.gz $out/coreg/
 	ln -s $eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked_b0.nii.gz $out/coreg
+	ln -s /data/joy/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/${bblIDs}_${SubDate_and_ID}_BrainExtractionMask.nii.gz $out/coreg/
+	ln -s /data/joy/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/${bblIDs}_${SubDate_and_ID}_ExtractedBrain0N4.nii.gz $out/coreg/
 
 	###################################
 	###         Cleanup             ###

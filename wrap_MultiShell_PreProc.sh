@@ -1,4 +1,4 @@
-s#!/bin/bash
+#!/bin/bash
 
 general=/data/joy/BBL/studies/grmpy/rawData/*/*/
 
