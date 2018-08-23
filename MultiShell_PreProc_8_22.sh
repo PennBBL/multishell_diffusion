@@ -49,7 +49,6 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	#################################
 	##            qa               ##
 	#################################
-	
 	echo "||||running quality assurance||||"
 
 	# Add Mark Elliot's qa script path
@@ -63,9 +62,9 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	$scripts/bval_rounder.sh $unroundedbval $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval 100
 
 	# Get quality assurance metrics on DTI data for each shell
-	###$scripts/qa_dti_v4.sh $inputnifti $unroundedbval $bvec 100 $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_dwi.qa 
+	$scripts/qa_dti_v4.sh $inputnifti $unroundedbval $bvec 100 $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_dwi.qa 
 	
-	## Zip all nifti files
+	# Zip all nifti files
 	gzip -f ${out}/prestats/qa/*.nii
 
 	# Rename clipmask
@@ -83,7 +82,6 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	###########################################################
 	##              DISTORTION/MOTION CORRECTION             ##
 	###########################################################
-
 	echo "||||running topup||||"
 
 	# Extract b0 from anterior to posterior phase-encoded input nifti for topup calculation	
@@ -96,14 +94,13 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	fslmerge -t $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_b0s $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_nodif_AP $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_nodif_PA
 
 	# Run topup to calculate correction for field distortion
-	###topup --imain=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_b0s.nii.gz --datain=$acqp --out=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --fout=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_field --iout=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup_iout
+	topup --imain=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_b0s.nii.gz --datain=$acqp --out=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --fout=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_field --iout=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup_iout
 
 	# Actually correct field distortion
-	###applytopup --imain=$inputnifti --datain=$acqp --inindex=1 --topup=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --out=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup_applied --method=jac
+	applytopup --imain=$inputnifti --datain=$acqp --inindex=1 --topup=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --out=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup_applied --method=jac
 
 	# Average MR signal over all volumes so brain extraction can work on signal representative of whole scan
 	fslmaths $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup_iout.nii.gz -Tmean $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_mean_iout.nii.gz
-
 
 	# Brain extraction mask for eddy, -m makes binary mask
 	topup_mask=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_bet_mean_iout_point_2.nii.gz
@@ -131,7 +128,6 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	##############################################
 	###           coregistration 		   ###
 	##############################################
-	
 	echo "||||executing coregistration||||"
 
 	# make white matter only mask from segmented T1 in prep for flirt BBR
@@ -178,6 +174,7 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	##       Native NODDI outputs to template space       ##
 	########################################################
 	echo "||||bringing NODDI scalars to template space||||"
+
 	# Translate and Warp amico Outputs to normalized Space (dependent on structural to template translation and warp already being calculated, sequence to structural calculated above)
 
 	# Fit -> Template
