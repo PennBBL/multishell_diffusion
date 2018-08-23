@@ -63,7 +63,7 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	$scripts/bval_rounder.sh $unroundedbval $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval 100
 
 	# Get quality assurance metrics on DTI data for each shell
-	$scripts/qa_dti_v4.sh $inputnifti $unroundedbval $bvec 100 $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_dwi.qa 
+	###$scripts/qa_dti_v4.sh $inputnifti $unroundedbval $bvec 100 $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_dwi.qa 
 	
 	## Zip all nifti files
 	gzip -f ${out}/prestats/qa/*.nii
@@ -117,7 +117,7 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	
 	echo "||||running eddy current correction||||"
 
-	/share/apps/fsl/5.0.11/source/fsl/bin/eddy_correct --imain=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup_applied.nii.gz --mask=${topup_mask} --index=/data/jux/BBL/projects/multishell_diffusion/processedData/index.txt --acqp=$acqp --bvecs=$bvec --bvals=$out/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval --out=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied --repol
+	/share/apps/fsl/5.0.11/source/fsl/bin/eddy --imain=${out}/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup_applied.nii.gz --mask=${topup_mask} --index=/data/jux/BBL/projects/multishell_diffusion/processedData/index.txt --acqp=${acqp} --bvecs=${bvec} --bvals=${out}/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval --out=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied --repol
 	
 	eddy_output=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied.nii.gz
 	
