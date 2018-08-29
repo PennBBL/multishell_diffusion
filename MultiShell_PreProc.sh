@@ -128,14 +128,15 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	
 	echo "||||running eddy current correction||||"
 
-	# GPU eddy (more than 4x as fast)
 	if [ $gpu -eq 1 ]; then
-	/data/jux/BBL/projects/multishell_diffusion/multishell_diffusionScripts/eddy_cuda --imain=${inputnifti} --mask=${topup_mask} --index=/data/jux/BBL/projects/multishell_diffusion/processedData/index.txt --acqp=${acqp} --bvecs=${bvec} --bvals=${out}/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval --topup=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --repol --out=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_gpu_sls --ol_type=both --mporder=10 --slspec=${slspec}
+		echo "|||--GPU Version--|||"
+		/data/jux/BBL/projects/multishell_diffusion/multishell_diffusionScripts/eddy_cuda --imain=${inputnifti} --mask=${topup_mask} --index=/data/jux/BBL/projects/multishell_diffusion/processedData/index.txt --acqp=${acqp} --bvecs=${bvec} --bvals=${out}/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval --topup=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --repol --out=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_gpu_sls --ol_type=both --mporder=10 --slspec=${slspec}
+		eddy_output=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_gpu_sls.nii.gz
 	else
-	/data/jux/BBL/projects/multishell_diffusion/multishell_diffusionScripts/eddy_openmp --imain=${inputnifti} --mask=${topup_mask} --index=/data/jux/BBL/projects/multishell_diffusion/processedData/index.txt --acqp=${acqp} --bvecs=${bvec} --bvals=${out}/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval --topup=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --repol --mb=4 --out=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_sls --ol_type=both
+		echo "|||--Non-GPU Version--|||"
+		/data/jux/BBL/projects/multishell_diffusion/multishell_diffusionScripts/eddy_openmp --imain=${inputnifti} --mask=${topup_mask} --index=/data/jux/BBL/projects/multishell_diffusion/processedData/index.txt --acqp=${acqp} --bvecs=${bvec} --bvals=${out}/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval --topup=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --repol --mb=4 --out=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_sls --ol_type=both
+		eddy_output=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_sls.nii.gz
 	fi
-	
-	eddy_output=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_gpu_sls.nii.gz
 	
 	# Mask eddy output using topup mask, make first b0 only for coreg
 	fslmaths ${eddy_output} -mas $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_bet_mean_iout_point_2_mask.nii.gz $eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked.nii.gz
