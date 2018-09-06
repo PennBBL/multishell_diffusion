@@ -76,7 +76,7 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	$scripts/bval_rounder.sh $unroundedbval $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval 100
 
 	# Get quality assurance metrics on DTI data for each shell
-	##$scripts/qa_dti_v4.sh $inputnifti $unroundedbval $bvec 100 $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_dwi.qa 
+	$scripts/qa_dti_v4.sh $inputnifti $unroundedbval $bvec 100 $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_dwi.qa 
 	
 	# Zip all nifti files
 	gzip -f ${out}/prestats/qa/*.nii
@@ -108,10 +108,10 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	fslmerge -t $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_b0s $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_nodif_AP $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_nodif_PA
 
 	# Run topup to calculate correction for field distortion
-	##topup --imain=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_b0s.nii.gz --datain=$acqp --out=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --fout=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_field --iout=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup_iout
+	topup --imain=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_b0s.nii.gz --datain=$acqp --out=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --fout=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_field --iout=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup_iout
 
 	# Actually correct field distortion
-	##applytopup --imain=$inputnifti --datain=$acqp --inindex=1 --topup=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --out=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup_applied --method=jac
+	applytopup --imain=$inputnifti --datain=$acqp --inindex=1 --topup=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --out=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup_applied --method=jac
 
 	# Average MR signal over all volumes so brain extraction can work on signal representative of whole scan
 	fslmaths $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup_iout.nii.gz -Tmean $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_mean_iout.nii.gz
@@ -122,18 +122,18 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	bet $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_mean_iout.nii.gz ${topup_mask} -m -f 0.2
 
 	# Create index for eddy to know which acquisition parameters apply to which volumes.(Original usage only correcting A>P, only using one set of acq params.)
-	#echo $indx > ~/index.txt
+	echo $indx > ~/index.txt
 
 	# Run eddy correction. Corrects for Electromagnetic-pulse induced distortions. Most computationally intensive of anything here, has taken >5 hours. 
 	
 	echo "||||running eddy current correction||||"
 
 	if [ $gpu -eq 1 ]; then
-		echo "|||--GPU Version--|||"
+		echo "|||--GPU version--|||"
 		/data/jux/BBL/projects/multishell_diffusion/multishell_diffusionScripts/eddy_cuda --imain=${inputnifti} --mask=${topup_mask} --index=/data/jux/BBL/projects/multishell_diffusion/processedData/index.txt --acqp=${acqp} --bvecs=${bvec} --bvals=${out}/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval --topup=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --repol --out=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_gpu_sls --ol_type=both --mporder=10 --slspec=${slspec}
 		eddy_output=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_gpu_sls.nii.gz
 	else
-		echo "|||--Non-GPU Version--|||"
+		echo "|||--non-GPU version--|||"
 		/data/jux/BBL/projects/multishell_diffusion/multishell_diffusionScripts/eddy_openmp --imain=${inputnifti} --mask=${topup_mask} --index=/data/jux/BBL/projects/multishell_diffusion/processedData/index.txt --acqp=${acqp} --bvecs=${bvec} --bvals=${out}/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval --topup=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --repol --mb=4 --out=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_sls --ol_type=both
 		eddy_output=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_sls.nii.gz
 	fi
