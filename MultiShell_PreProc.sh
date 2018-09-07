@@ -107,11 +107,8 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	# Merge b0s for topup calculation
 	fslmerge -t $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_b0s $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_nodif_AP $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_nodif_PA
 
-	# Run topup to calculate correction for field distortion
+	# Run topup to calculate correction for phase-econding direction associated distortions
 	topup --imain=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_b0s.nii.gz --datain=$acqp --out=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --fout=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_field --iout=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup_iout
-
-	# Actually correct field distortion
-	applytopup --imain=$inputnifti --datain=$acqp --inindex=1 --topup=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --out=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup_applied --method=jac
 
 	# Average MR signal over all volumes so brain extraction can work on signal representative of whole scan
 	fslmaths $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup_iout.nii.gz -Tmean $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_mean_iout.nii.gz
@@ -138,6 +135,10 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 		eddy_output=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_sls.nii.gz
 	fi
 	
+	# Correct phase-encoding direction associated distortions using topup calculations
+	applytopup --imain=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_sls.eddy_outlier_free_data.nii.gz --datain=$acqp --inindex=1 --topup=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --out=$out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_eddied_sls.eddy_outlier_free_data.nii.gz --method=jac
+	eddy_output=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_sls.eddy_outlier_free_data.nii.gz
+
 	# Mask eddy output using topup mask, make first b0 only for coreg
 	fslmaths ${eddy_output} -mas $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_bet_mean_iout_point_2_mask.nii.gz $eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked.nii.gz
 
