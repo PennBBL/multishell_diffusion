@@ -12,7 +12,7 @@ for i in $general;do
 	ID=$(echo ${SubDate_and_ID}|cut -d',' -f2)
 	prevrantest=/data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/prestats/eddy/${bblIDs}_${SubDate_and_ID}_eddied_sls.nii.gz
 	if [ -f $prevrantest ]; then
-		echo $bblIDs "already ran. You can use the time this saved you to compliment the person sitting next to you, or to get a real job."
+		echo $bblIDs "already had eddy output. Skipping. Comment out lines 14-16 if that's not up your alley"
 	else
 		## Create log directory
 		logDir=/data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/logfiles
@@ -34,5 +34,5 @@ for i in $general;do
 		echo ${bblIDs}
 		echo ${SubDate_and_ID}
 		qsub -q all.q,basic.q -wd ${logDir} -l h_vmem=14G,s_vmem=13G ${subject_script}
-	fi
+	##fi
 done
