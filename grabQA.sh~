@@ -1,0 +1,21 @@
+#!/bin/bash
+
+general=/data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/*/*
+cd /data/joy/BBL/projects/multishell_diffusion/GroupLevelAnalyses
+echo "quality assurance" > ~/qa.txt
+for i in $general; do
+	IDs=$(echo ${i}|cut -d'/' -f9)
+	Dates=$(echo ${i}|cut -d'/' -f10)
+	qa=$(cat /data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${IDs}/${Dates}/prestats/qa/*.qa)
+	b0meanABSrms=$(echo ${qa}|cut -d ' ' -f12)
+	b0meanRELrms=$(echo ${qa}|cut -d ' ' -f14)
+	b0TSNR=$(echo ${qa}|cut d ' ' -f20)
+	echo ${IDs}	
+	echo $b0meanABSrms
+	echo $b0meanRELrms
+	##b0TSNR=$(echo ${qa}|cut -d '	' -f3)
+	##echo $b0TSNR
+	x="${IDs} , ${b0meanABSrms} , ${b0meanRELrms}, ${b0TSNR}	"
+	echo ${x}	
+	echo ${x} >> ~/qa.txt
+done

@@ -73,10 +73,10 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	cp $bvec $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_bvec.bvec
 
 	# Round bvals up or down 5, corrects for scanner output error in bvals
-	###$scripts/bval_rounder.sh $unroundedbval $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval 100
+	$scripts/bval_rounder.sh $unroundedbval $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval 100
 
 	# Get quality assurance metrics on DTI data for each shell
-	###$scripts/qa_dti_v4.sh $inputnifti $unroundedbval $bvec 100 $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_dwi.qa 
+	$scripts/qa_dti_v4.sh $inputnifti $unroundedbval $bvec 100 $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_dwi.qa 
 	
 	# Zip all nifti files
 	gzip -f ${out}/prestats/qa/*.nii
@@ -107,8 +107,11 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	# Merge b0s for topup calculation
 	fslmerge -t $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_b0s $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_nodif_AP $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_nodif_PA
 
-	# Run topup to calculate correction for phase-econding direction associated distortions
-	###topup --imain=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_b0s.nii.gz --datain=$acqp --out=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --fout=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_field --iout=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup_iout
+	# Run topup to calculate correction for field distortion
+	topup --imain=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_b0s.nii.gz --datain=$acqp --out=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --fout=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_field --iout=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup_iout
+
+	# Actually correct field distortion
+	applytopup --imain=$inputnifti --datain=$acqp --inindex=1 --topup=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --out=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup_applied --method=jac
 
 	# Average MR signal over all volumes so brain extraction can work on signal representative of whole scan
 	fslmaths $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup_iout.nii.gz -Tmean $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_mean_iout.nii.gz
@@ -119,69 +122,69 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	bet $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_mean_iout.nii.gz ${topup_mask} -m -f 0.2
 
 	# Create index for eddy to know which acquisition parameters apply to which volumes.(Original usage only correcting A>P, only using one set of acq params.)
-	echo $indx > ~/index.txt
+	#echo $indx > ~/index.txt
 
 	# Run eddy correction. Corrects for Electromagnetic-pulse induced distortions. Most computationally intensive of anything here, has taken >5 hours. 
 	
-	echo "||||running eddy current correction||||"
+	##echo "||||running eddy current correction||||"
 
-	###if [ $gpu -eq 1 ]; then
-	###	echo "|||--GPU version--|||"
-	###	/data/jux/BBL/projects/multishell_diffusion/multishell_diffusionScripts/eddy_cuda --imain=${inputnifti} --mask=${topup_mask} --index=/data/jux/BBL/projects/multishell_diffusion/processedData/index.txt --acqp=${acqp} --bvecs=${bvec} --bvals=${out}/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval --topup=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --repol --out=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_gpu_sls --ol_type=both --mporder=10 --slspec=${slspec}
-	###	eddy_output=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_gpu_sls.nii.gz
-	###else
-	###	echo "|||--non-GPU version--|||"
-	###	/data/jux/BBL/projects/multishell_diffusion/multishell_diffusionScripts/eddy_openmp --imain=${inputnifti} --mask=${topup_mask} --index=/data/jux/BBL/projects/multishell_diffusion/processedData/index.txt --acqp=${acqp} --bvecs=${bvec} --bvals=${out}/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval --topup=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --repol --mb=4 --out=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_sls --ol_type=both
-		eddy_output=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_sls.nii.gz
-	###fi
-
+	##if [ $gpu -eq 1 ]; then
+	##	echo "|||--GPU version--|||"
+	##	/data/jux/BBL/projects/multishell_diffusion/multishell_diffusionScripts/eddy_cuda --imain=${inputnifti} --mask=${topup_mask} --index=/data/jux/BBL/projects/multishell_diffusion/processedData/index.txt --acqp=${acqp} --bvecs=${bvec} --bvals=${out}/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval --topup=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --repol --out=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_gpu_sls --ol_type=both --mporder=10 --slspec=${slspec}
+	##	eddy_output=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_gpu_sls.nii.gz
+	##else
+	##	echo "|||--non-GPU version--|||"
+	##	/data/jux/BBL/projects/multishell_diffusion/multishell_diffusionScripts/eddy_openmp --imain=${inputnifti} --mask=${topup_mask} --index=/data/jux/BBL/projects/multishell_diffusion/processedData/index.txt --acqp=${acqp} --bvecs=${bvec} --bvals=${out}/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval --topup=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --repol --mb=4 --out=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_sls --ol_type=both
+	##	eddy_output=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_sls.nii.gz
+	##fi
+	
 	# Mask eddy output using topup mask, make first b0 only for coreg
-	fslmaths ${eddy_output} -mas $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_bet_mean_iout_point_2_mask.nii.gz $eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked.nii.gz
+	##fslmaths ${eddy_output} -mas $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_bet_mean_iout_point_2_mask.nii.gz $eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked.nii.gz
 
-	fslroi $eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked.nii.gz $eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked_b0.nii.gz 0 1
+	##fslroi $eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked.nii.gz $eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked_b0.nii.gz 0 1
 	 	
-	masked_b0=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked_b0.nii.gz
+	##masked_b0=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked_b0.nii.gz
 
 	##############################################
 	###           coregistration 		   ###
 	##############################################
-	echo "||||executing coregistration||||"
+	##echo "||||executing coregistration||||"
 
 	# make white matter only mask from segmented T1 in prep for flirt BBR
-	fslmaths /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*_BrainSegmentation.nii.gz -thr 3 -uthr 3 $out/coreg/${bblIDs}_${SubDate_and_ID}_Struct_WM.nii.gz
+	##fslmaths /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*_BrainSegmentation.nii.gz -thr 3 -uthr 3 $out/coreg/${bblIDs}_${SubDate_and_ID}_Struct_WM.nii.gz
 
 	# use flirt to calculate diffusion -> structural translation 
-	flirt -cost bbr -wmseg $out/coreg/${bblIDs}_${SubDate_and_ID}_Struct_WM.nii.gz -in ${masked_b0}.nii.gz -ref /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*_ExtractedBrain0N4.nii.gz -out $out/coreg/${bblIDs}_${SubDate_and_ID}_flirt_BBR -dof 6 -omat $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructFSL.mat
+	##flirt -cost bbr -wmseg $out/coreg/${bblIDs}_${SubDate_and_ID}_Struct_WM.nii.gz -in ${masked_b0}.nii.gz -ref /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*_ExtractedBrain0N4.nii.gz -out $out/coreg/${bblIDs}_${SubDate_and_ID}_flirt_BBR -dof 6 -omat $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructFSL.mat
 
 	# Convert FSL omat to Ras
-	c3d_affine_tool -src ${masked_b0} -ref /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/${SubDate_and_ID}/antsCT/*ExtractedBrain0N4.nii.gz $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructFSL.mat -fsl2ras -oitk $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat
+	##c3d_affine_tool -src ${masked_b0} -ref /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/${SubDate_and_ID}/antsCT/*ExtractedBrain0N4.nii.gz $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructFSL.mat -fsl2ras -oitk $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat
 
 	# Use Subject to template warp and affine from grmpy directory after Ras diffusion -> structural space affine to put eddied_bet_2 onto pnc template
-	antsApplyTransforms -e 3 -d 3 -i ${masked_b0} -r ${template} -o $out/coreg/${bblIDs}_${SubDate_and_ID}_eddied_b0_template_space.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate1Warp.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate0GenericAffine.mat -t $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat
+	##antsApplyTransforms -e 3 -d 3 -i ${masked_b0} -r ${template} -o $out/coreg/${bblIDs}_${SubDate_and_ID}_eddied_b0_template_space.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate1Warp.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate0GenericAffine.mat -t $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat
 
 	# Take T1 generated mask to sequence (diffusion) space
-	antsApplyTransforms -e 3 -d 3 -i /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/${bblIDs}_${SubDate_and_ID}_BrainExtractionMask.nii.gz -r /data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/prestats/eddy/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked_b0.nii.gz -o $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_seqSpaceT1Mask.nii.gz -t [/data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat,1] -n NearestNeighbor
+	##antsApplyTransforms -e 3 -d 3 -i /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/${bblIDs}_${SubDate_and_ID}_BrainExtractionMask.nii.gz -r /data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/prestats/eddy/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked_b0.nii.gz -o $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_seqSpaceT1Mask.nii.gz -t [/data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat,1] -n NearestNeighbor
 
 	#remask eddy output using T1 space generated mask
 
-	fslmaths ${eddy_output} -mas $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_seqSpaceT1Mask.nii.gz $eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_t1Masked.nii.gz
+	##fslmaths ${eddy_output} -mas $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_seqSpaceT1Mask.nii.gz $eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_t1Masked.nii.gz
 
 	########################################################
 	###                AMICO/NODDI			     ###
 	########################################################
-	echo "||||running NODDI via AMICO||||"
+	##echo "||||running NODDI via AMICO||||"
 
 	# Generate AMICO scheme (edit paths for files like mask and eddy output in generateamicoM script)
-	/data/jux/BBL/projects/multishell_diffusion/multishell_diffusionScripts/amicoSYRP/scripts/generateAmicoM_AP.pl $bblIDs $SubDate_and_ID
+	##/data/jux/BBL/projects/multishell_diffusion/multishell_diffusionScripts/amicoSYRP/scripts/generateAmicoM_AP.pl $bblIDs $SubDate_and_ID
 
 	# Run AMICO
-	/data/jux/BBL/projects/multishell_diffusion/multishell_diffusionScripts/amicoSYRP/scripts/runAmico.sh /data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/AMICO/runAMICO.m
+	##/data/jux/BBL/projects/multishell_diffusion/multishell_diffusionScripts/amicoSYRP/scripts/runAmico.sh /data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/AMICO/runAMICO.m
 	
 	# Set NODDI Dir
-	NODDIdir=/data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/AMICO/NODDI
+	##NODDIdir=/data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/AMICO/NODDI
 	
 	# Zip and rename native space NODDI outputs to subejct specific
-	gzip $NODDIdir/*.nii
+	##gzip $NODDIdir/*.nii
 	mv $NODDIdir/FIT_dir.nii.gz $NODDIdir/${bblIDs}_${SubDate_and_ID}_FIT_dir.nii.gz 
 	mv $NODDIdir/FIT_ICVF.nii.gz $NODDIdir/${bblIDs}_${SubDate_and_ID}_FIT_ICVF.nii.gz 
 	mv $NODDIdir/FIT_ISOVF.nii.gz $NODDIdir/${bblIDs}_${SubDate_and_ID}_FIT_ISOVF.nii.gz 
@@ -190,36 +193,36 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	########################################################
 	##       Native NODDI outputs to template space       ##
 	########################################################
-	echo "||||bringing NODDI scalars to template space||||"
+	##echo "||||bringing NODDI scalars to template space||||"
 
 	# Translate and Warp amico Outputs to normalized Space (dependent on structural to template translation and warp already being calculated, sequence to structural calculated above)
 
 	# Fit -> Template
-	antsApplyTransforms -e 3 -d 3 -i $NODDIdir/FIT_dir.nii.gz $NODDIdir/${bblIDs}_${SubDate_and_ID}_FIT_dir.nii.gz -r ${template} -o $out/norm/${bblIDs}_${SubDate_and_ID}_FIT_dir_Std.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate1Warp.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate0GenericAffine.mat -t $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat
+	##antsApplyTransforms -e 3 -d 3 -i $NODDIdir/FIT_dir.nii.gz $NODDIdir/${bblIDs}_${SubDate_and_ID}_FIT_dir.nii.gz -r ${template} -o $out/norm/${bblIDs}_${SubDate_and_ID}_FIT_dir_Std.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate1Warp.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate0GenericAffine.mat -t $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat
 
 	# ICVF -> Template 
-	antsApplyTransforms -e 3 -d 3 -i $NODDIdir/${bblIDs}_${SubDate_and_ID}_FIT_ICVF.nii.gz -r ${template} -o $out/norm/${bblIDs}_${SubDate_and_ID}_FIT_ICVF_Std.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate1Warp.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate0GenericAffine.mat -t $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat
+	##antsApplyTransforms -e 3 -d 3 -i $NODDIdir/${bblIDs}_${SubDate_and_ID}_FIT_ICVF.nii.gz -r ${template} -o $out/norm/${bblIDs}_${SubDate_and_ID}_FIT_ICVF_Std.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate1Warp.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate0GenericAffine.mat -t $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat
 
 	# ISOVF -> Template
-	antsApplyTransforms -e 3 -d 3 -i $NODDIdir/${bblIDs}_${SubDate_and_ID}_FIT_ISOVF.nii.gz -r ${template} -o $out/norm/${bblIDs}_${SubDate_and_ID}_FIT_ISOVF_Std.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate1Warp.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate0GenericAffine.mat -t $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat
+	##antsApplyTransforms -e 3 -d 3 -i $NODDIdir/${bblIDs}_${SubDate_and_ID}_FIT_ISOVF.nii.gz -r ${template} -o $out/norm/${bblIDs}_${SubDate_and_ID}_FIT_ISOVF_Std.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate1Warp.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate0GenericAffine.mat -t $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat
 
 	# OD -> Template
-	antsApplyTransforms -e 3 -d 3 -i $NODDIdir/${bblIDs}_${SubDate_and_ID}_FIT_OD.nii.gz -r ${template} -o $out/norm/${bblIDs}_${SubDate_and_ID}_FIT_OD_Std.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate1Warp.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate0GenericAffine.mat -t $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat
+	##antsApplyTransforms -e 3 -d 3 -i $NODDIdir/${bblIDs}_${SubDate_and_ID}_FIT_OD.nii.gz -r ${template} -o $out/norm/${bblIDs}_${SubDate_and_ID}_FIT_OD_Std.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate1Warp.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate0GenericAffine.mat -t $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat
 
 	# Add Simlinks
-	ln -s ${template} $out/norm/
-	ln -s ${template} $out/coreg/
-	ln -s $eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked_b0.nii.gz $out/coreg
-	ln -s /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/${bblIDs}_${SubDate_and_ID}_BrainExtractionMask.nii.gz $out/coreg/
-	ln -s /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/${bblIDs}_${SubDate_and_ID}_ExtractedBrain0N4.nii.gz $out/coreg/
+	##ln -s ${template} $out/norm/
+	##ln -s ${template} $out/coreg/
+	##ln -s $eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked_b0.nii.gz $out/coreg
+	##ln -s /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/${bblIDs}_${SubDate_and_ID}_BrainExtractionMask.nii.gz $out/coreg/
+	##ln -s /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/${bblIDs}_${SubDate_and_ID}_ExtractedBrain0N4.nii.gz $out/coreg/
 
 	###################################
 	###         Cleanup             ###
 	###################################
 
-rm $out/AMICO/*.nii*
-rm $out/AMICO/bvals
-rm $out/AMICO/bvecs
+##rm $out/AMICO/*.nii*
+##rm $out/AMICO/bvals
+##rm $out/AMICO/bvecs
 
 
 

@@ -7,9 +7,9 @@
 
 # Needed inputs built-in to script: DWIs, bvecs, bvals, acquistion parameters, template brain, software/script locations (unrounded)
 
+# acquistion paramaters of (A>P phase encoded in original usage)
+
 # eddy step requires more memory than default allocation of 3 G of RAM (h_vmem,s_vmem reccomended)
-
-
 
 bblIDs=$1
 SubDate_and_ID=$2
@@ -18,12 +18,6 @@ general=/data/jux/BBL/studies/grmpy/rawData/$bblIDs/$SubDate_and_ID
 scripts=/home/melliott/scripts
 acqp=/data/jux/BBL/projects/multishell_diffusion/processedData/acqpars.txt
 template=/data/jux/BBL/projects/xcpWorkshop/input/template/PNCtemplate2mm.nii.gz
-slspec=/data/jux/BBL/projects/multishell_diffusion/processedData/slspec.txt
-
-
-# for GPU Usage
-
-##export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 
 # Initialize AMICO				
 matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell_diffusionScripts/amicoSYRP/scripts/amicoGlobalInitialize.m' -r 'exit' 
@@ -68,7 +62,7 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	$scripts/bval_rounder.sh $unroundedbval $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval 100
 
 	# Get quality assurance metrics on DTI data for each shell
-##	$scripts/qa_dti_v4.sh $inputnifti $unroundedbval $bvec 100 $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_dwi.qa 
+	$scripts/qa_dti_v4.sh $inputnifti $unroundedbval $bvec 100 $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_dwi.qa 
 	
 	# Zip all nifti files
 	gzip -f ${out}/prestats/qa/*.nii
@@ -100,10 +94,10 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	fslmerge -t $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_b0s $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_nodif_AP $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_nodif_PA
 
 	# Run topup to calculate correction for field distortion
-##	topup --imain=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_b0s.nii.gz --datain=$acqp --out=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --fout=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_field --iout=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup_iout
+	topup --imain=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_b0s.nii.gz --datain=$acqp --out=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --fout=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_field --iout=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup_iout
 
 	# Actually correct field distortion
-##	applytopup --imain=$inputnifti --datain=$acqp --inindex=1 --topup=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --out=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup_applied --method=jac
+	applytopup --imain=$inputnifti --datain=$acqp --inindex=1 --topup=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --out=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup_applied --method=jac
 
 	# Average MR signal over all volumes so brain extraction can work on signal representative of whole scan
 	fslmaths $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup_iout.nii.gz -Tmean $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_mean_iout.nii.gz
@@ -114,15 +108,15 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	bet $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_mean_iout.nii.gz ${topup_mask} -m -f 0.2
 
 	# Create index for eddy to know which acquisition parameters apply to which volumes.(Original usage only correcting A>P, only using one set of acq params.)
-	#echo $indx > ~/index.txt
+	echo $indx > index.txt
 
 	# Run eddy correction. Corrects for Electromagnetic-pulse induced distortions. Most computationally intensive of anything here, has taken >5 hours. 
 	
 	echo "||||running eddy current correction||||"
 
-	~/eddy_openmp --imain=${inputnifti} --mask=${topup_mask} --index=/data/jux/BBL/projects/multishell_diffusion/processedData/index.txt --acqp=${acqp} --bvecs=${bvec} --bvals=${out}/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval --topup=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --repol --mb=4 --out=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_sls --ol_type=both
+	##/share/apps/fsl/5.0.11/source/fsl/bin/eddy --imain=${inputnifti} --mask=${topup_mask} --index=/data/jux/BBL/projects/multishell_diffusion/processedData/index.txt --acqp=${acqp} --bvecs=${bvec} --bvals=${out}/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval --topup=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --out=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied --repol
 	
-	eddy_output=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_sls.nii.gz
+	eddy_output=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied.nii.gz
 	
 	# Mask eddy output using topup mask, make first b0 only for coreg
 	fslmaths ${eddy_output} -mas $out/prestats/topup/${bblIDs}_${SubDate_and_ID}_bet_mean_iout_point_2_mask.nii.gz $eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked.nii.gz

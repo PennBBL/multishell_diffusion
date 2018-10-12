@@ -1,41 +1,32 @@
-cd '/data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/'
-subjects = dir
-
-%subjects(1) = []
-%subjects(1) = []
-
-%output_df = zeros(66, 4)
-%bblid = zeros(66, 1)
-%allSubj_netStrength = zeros(66, 1)
-%allSubj_betweenCon = zeros(66, 1)
-%allSubj_withinCon = zeros(66, 1)
-for l=3:length(subjects)
+cd '/data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/'
+subjects = dlmread('~/torun.txt')
+for x=1:length(subjects)
 	
-    subD = fullfile('/', 'data','joy','BBL','projects','multishell_diffusion','processedData','multishellPipelineFall2017', sprintf(subjects(l).name))
+    subD = fullfile('/', 'data','jux','BBL','projects','multishell_diffusion','processedData','multishellPipelineFall2017', num2str(subjects(x)))
     
     cd(subD)
    
     date = dir
     
-    currD = fullfile('/', 'data','joy','BBL','projects','multishell_diffusion','processedData','multishellPipelineFall2017', sprintf(subjects(l).name), sprintf(date(3).name), 'tractography')
-	%currD = fullfile('/', 'data','joy','BBL','projects','multishell_diffusion','processedData','multishellPipelineFall2017', '104235', '20170623x10585', 'tractography')
-   % l=3
+    currD = fullfile('/', 'data','jux','BBL','projects','multishell_diffusion','processedData','multishellPipelineFall2017', num2str(subjects(x)), sprintf(date(3).name), 'tractography')
+	%currD = fullfile('/', 'data','jux','BBL','projects','multishell_diffusion','processedData','multishellPipelineFall2017', '106880', '20160819x10302', 'tractography')
     cd(currD)
-    icvf_path = dir('*ICVF_matrixts.csv')
-    icvf_mat = csvread(sprintf(icvf_path.name),1,0); 
-    % figure, imagesc(icvf_mat); colormap(jet); set(gcf,'color','white'); 
+	%filename=[num2str(subjects(x)),'_',sprintf(date(3).name),'_','ICVF_matrixts.csv']
+    icvf_path = fullfile('/','data','jux','BBL','projects','multishell_diffusion', 'GroupLevelAnalyses', '10_1', 'TS_matrices')
+	cd(icvf_path)
+	path_name = dir([num2str(subjects(x)),'_',sprintf(date(3).name),'_','FA_matrixsc.csv'])
+   icvf_mat = csvread((path_name.name),1,0);
+	%figure, imagesc(icvf_mat); colormap(jet); set(gcf,'color','white'); 
 
-	%fa_path ='/data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/*/*/tractography/*FA_matrixts.csv'; fa_mat = csvread(fa_path,1,0); figure, imagesc(fa_mat); colormap(jet); set(gcf,'color','white'); 
+	%fa_path ='/data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/*/*/tractography/*FA_matrixts.csv'; fa_mat = csvread(fa_path,1,0); figure, imagesc(fa_mat); colormap(jet); set(gcf,'color','white'); 
 
-	%odi_path='/data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/*/*/tractography/*ODI_matrixts.csv'; sc_mat = csvread(odi_path,1,0); figure, imagesc(log(sc_mat); colormap(jet); set(gcf,'color','white')
+	%odi_path='/data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/*/*/tractography/*ODI_matrixts.csv'; sc_mat = csvread(odi_path,1,0); figure, imagesc(log(sc_mat); colormap(jet); set(gcf,'color','white')
 
-	% Define community affiliation vector
-	input_commAff=dlmread('/data/joy/BBL/projects/pncBaumDti/Schaefer200_Yeo7_affil.txt')
+	%Define community affiliation vector
+	input_commAff=dlmread('/data/jux/BBL/projects/pncBaumDti/Schaefer200_Yeo7_affil.txt')
 
 	% A = connectivity matrix
 	A = icvf_mat;
-    Avec=squareform(A)';
-    total_strength=sum(Avec);
 
 	% Define Modules and Nodes in network
 	unique_S=unique(input_commAff);
@@ -72,7 +63,6 @@ for l=3:length(subjects)
 
 		% Within module connectivity
 		comm_wb_mat(i,1) = nanmean(nanmean(A(comidx,comidx)));
-        %number of subjects by number of modules 
 		% Between module connectivity
 		comm_wb_mat(i,2) = nanmean(nanmean(A(comidx,not_comidx)));
 
@@ -92,30 +82,10 @@ for l=3:length(subjects)
 	% Average Between-Module Connectivity
 	Avg_Between_Conn=wb_vec(2)
     
-    %network specific values
-    withinConn=comm_wb_mat(:,1)'
-    
     % print stuff to csvs
-   % ICVF_csvcontents = [Avg_Within_Conn,Avg_Between_Conn,total_strength];
-    csvwrite('ICVFNetworkCon.csv', withinConn) 
-    
-    % Total strength
-    allSubj_netStrength(l) = total_strength;
-    
-    % subject id
-    %bblid(l)= sprintf('%s',subjects(l).name)
-    
-    % withincon
-   allSubj_betweenCon(l) = Avg_Between_Conn;
-   
-   % betweencon
-   allSubj_betweenCon(l) =  Avg_Within_Conn;
-   
+    ICVF_csvcontents = [num2str(subjects(x)), ', ' num2str(wb_vec(1)), ', ' num2str(wb_vec(2))]
+	csv_name=[num2str(subjects(x)), '_', sprintf(date(3).name), '_','SCcon_ind_nets.csv']
+  % dlmwrite(csv_name,ICVF_csvcontents) 
+	dlmwrite(csv_name, comm_wb_mat)
+
 end
-
-%output_df(:,1) = bblid;
-%output_df(:,2) = allSubj_netStrength;
-%output_df(:,3) = allSubj_betweenCon;
-%output_df(:,4) = allSubj_withinCon;
-
-%dlmwrite('/data/joy/BBL/projects/multishell_diffusion/processedData/Connectivity/within_between_strength.csv', output_df)
