@@ -11,9 +11,9 @@ for i in $general;do
 	Date=$(echo ${SubDate_and_ID}|cut -d',' -f1)
 	ID=$(echo ${SubDate_and_ID}|cut -d',' -f2)
 	prevrantest=/data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/prestats/eddy/${bblIDs}_${SubDate_and_ID}_eddied_sls.nii.gz
-	if [ -f $prevrantest ]; then
-		echo $bblIDs "already had eddy output. Skipping. Comment out lines 14-16 if that's not up your alley"
-	else
+	##if [ -f $prevrantest ]; then
+	###	echo $bblIDs "already had eddy output. Skipping. Comment out lines 14-16 if that's not up your alley"
+	###else
 		## Create log directory
 		logDir=/data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/logfiles
 		mkdir -p ${logDir}
