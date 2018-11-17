@@ -1,5 +1,0 @@
-modulename	./qa_dti_v3.sh
-version	3
-inputfile	/data/joy/BBL/projects/multishell_diffusion/exampleSubject/DTI_MultiShell_117dir/nifti/DTI_MultiShell_117dir_S012_I000000DTIMultiShell117dir.nii.gz
-clipval	65535
-clipcount	170

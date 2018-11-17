@@ -1,7 +1,0 @@
-#!/bin/bash
-general=~/TS_matrices/TS_matrices/*xICVFcon.csv
-for i in $general;do
-contents=$(cat $i)
-echo $contents >>~/SCxICVFCon.csv
-done
-
