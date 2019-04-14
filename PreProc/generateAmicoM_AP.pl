@@ -21,19 +21,19 @@ if ($#ARGV < 0) {
 
 my ($subj, $tp) = @ARGV;
 
-my $appsDir = "/data/joy/BBL/projects/multishell_diffusion/multishell_diffusionScripts/amicoSYRP/bin";
+my $appsDir = "/data/jux/BBL/projects/multishell_diffusion/multishell_diffusionScripts/amicoSYRP/bin";
 
-my $inputDir = "/data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${subj}/${tp}";
+my $inputDir = "/data/joy/BBL/tutorials/exampleData/AMICO_NODDI/Processed_Data/${subj}/${tp}";
 
 my $bvals = "${inputDir}/prestats/qa/${subj}_${tp}_roundedbval.bval";
 
-my $bvecs = "${inputDir}/prestats/eddy/${subj}_${tp}_eddied.eddy_rotated_bvecs";
+my $bvecs = "${inputDir}/prestats/eddy/${subj}_${tp}_eddied_sls.eddy_rotated_bvecs";
 
-my $data = "${inputDir}/prestats/eddy/${subj}_${tp}_eddied.nii.gz";
+my $data = "${inputDir}/prestats/eddy/${subj}_${tp}_eddied_sls.nii.gz";
 
 my $mask = "${inputDir}/prestats/eddy/${subj}_${tp}_seqSpaceT1Mask.nii.gz";
 
-my $amicoDataDir = "/data/joy/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${subj}/${tp}/AMICO";
+my $amicoDataDir = "/data/joy/BBL/tutorials/exampleData/AMICO_NODDI/Processed_Data/${subj}/${tp}/AMICO";
 
 system("mkdir -p $amicoDataDir");
 
@@ -51,9 +51,9 @@ clearvars, clearvars -global, clc
 addpath('${appsDir}/AMICO/matlab')
 
 % Setup AMICO
-AMICO_Setup
+AMICO_Setup_reproduce
 
-AMICO_SetSubject( 'multishellPipelineFall2017', '${subj}/${tp}' )
+AMICO_SetSubject( 'Processed_Data', '${subj}/${tp}' )
 
 CONFIG.dwiFilename    = fullfile( CONFIG.DATA_path, 'AMICO/dwi.nii' );
 CONFIG.maskFilename   = fullfile( CONFIG.DATA_path, 'AMICO/brainMask.nii' );
@@ -68,7 +68,7 @@ AMICO_LoadData
 AMICO_SetModel( 'NODDI' );
 
 % Generate the kernels corresponding to the protocol
-AMICO_GenerateKernels( true );
+AMICO_GenerateKernels( false );
 
 % Resample the kernels to match the specific subject's scheme
 AMICO_ResampleKernels();

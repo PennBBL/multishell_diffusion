@@ -6,6 +6,7 @@
 # NOTE: This version handles multiple b-value shells
 #
 # M. Elliott - 2017
+# ### Added edited imglob 2/19/19 bc it calls unspecified python, defaults to v3, and breaks via print
 
 # --------------------------
 Usage() {
@@ -15,11 +16,11 @@ Usage() {
 # --------------------------
 
 # --- Perform standard qa_script code ---
-source qa_preamble.sh
+source /data/joy/BBL/tutorials/code/multishell_diffusion/PreProc/qa_preamble.sh
 
 # --- Parse inputs ---
 if [ $# -lt 4 -o $# -gt 5 ]; then Usage; fi
-infile=`imglob -extension $1`
+infile=`/data/joy/BBL/tutorials/code/multishell_diffusion/PreProc/imglob -extension $1`
 if [ "X$infile" == "X" ]; then echo "ERROR: Cannot find file $1 or it is not a NIFTI file."; exit 1; fi
 indir=`dirname $infile`
 inbase=`basename $infile`
@@ -28,11 +29,15 @@ bvalfile=$2
 bvecfile=$3
 maskfile=""
 if [ $# -gt 4 ]; then
-    maskfile=`imglob -extension $4`
+    maskfile=`/data/joy/BBL/tutorials/code/multishell_diffusion/PreProc/imglob -extension $4`
     shift
 fi
 resultfile=$4
 outdir=`dirname $resultfile`
+
+# Added in 2/27/19 AP to override not being able to find version number
+VERSION=3
+#####
 
 # --- start result file ---
 if [ $append -eq 0 ]; then 
@@ -105,6 +110,9 @@ for (( i=0; i<$nunique_bvals; i++ )) ; do
 	infile=$outdir/${inroot}_b${bval}.nii
 
 	echo "Computing moco metrics on bval = $bval shell..."
+	###
+	echo ${EXECDIR}qa_motion_v${VERSION}.sh -append -subfield _b${bval} $keepswitch $infile $resultfile
+	###
 	${EXECDIR}qa_motion_v${VERSION}.sh -append -subfield _b${bval} $keepswitch $infile $resultfile
 
 	echo "Computing tsnr metrics on bval = $bval shell..."

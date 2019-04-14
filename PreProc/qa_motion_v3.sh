@@ -3,7 +3,7 @@
 # QA_MOTION.sh - compute motion metrics from 4D Nifti
 #
 # M. Elliott - 6/2013
-
+# ### Added edited imglob 2/19/19 bc it calls unspecified python, defaults to v3, and breaks via print
 # --------------------------
 Usage() {
 	echo "usage: `basename $0` [-append] [-keep] <4Dinput> <resultfile>"
@@ -12,11 +12,11 @@ Usage() {
 # --------------------------
 
 # --- Perform standard qa_script code ---
-source qa_preamble.sh
+source /data/joy/BBL/tutorials/code/multishell_diffusion/PreProc/qa_preamble.sh
 
 # --- Parse inputs ---
 if [ $# -ne 2 ]; then Usage; fi
-infile=`imglob -extension $1`
+infile=`/data/joy/BBL/tutorials/code/multishell_diffusion/PreProc/imglob -extension $1`
 if [ "X$infile" == "X" ]; then echo "ERROR: Cannot find file $1 or it is not a NIFTI file."; exit 1; fi
 indir=`dirname $infile` 
 inbase=`basename $infile`

@@ -8,6 +8,7 @@
 export FSLOUTPUTTYPE=NIFTI
 export AFNI_AUTOGZIP=NO
 export AFNI_COMPRESSOR=
+export python=/share/apps/python/Python-2.7.9/bin/python2.7
 
 # --- get path to other scripts called by this one ---
 OCD=$PWD

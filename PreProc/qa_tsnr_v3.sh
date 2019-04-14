@@ -7,6 +7,7 @@
 # version 2. added Driftpercent to be in percent of gmean rather than absolute
 #            added subfield option
 # version 3. calc tSNR with fit to linear detrend so slope doesn't influence STDev (note V2 already did this w/ AFNI)
+# ### Added edited imglob 2/19/19 bc it calls unspecified python, defaults to v3, and breaks via print
 
 # --------------------------
 Usage() {
@@ -16,17 +17,17 @@ Usage() {
 # --------------------------
 
 # --- Perform standard qa_script code ---
-source qa_preamble.sh
+source /data/joy/BBL/tutorials/code/multishell_diffusion/PreProc/qa_preamble.sh
 
 # --- Parse command line inputs ---
 if [ $# -lt 2 -o $# -gt 3 ]; then Usage; fi
-infile=`imglob -extension $1`
+infile=`/data/joy/BBL/tutorials/code/multishell_diffusion/PreProc/imglob -extension $1`
 indir=`dirname $infile` 
 inbase=`basename $infile`
 inroot=`remove_ext $inbase`
 maskfile=""
 if [ $# -gt 2 ]; then
-    maskfile=`imglob -extension $2`
+    maskfile=`/data/joy/BBL/tutorials/code/multishell_diffusion/PreProc/imglob -extension $2`
     shift
 fi
 resultfile=$2

@@ -4,6 +4,7 @@
 # Modified to clip at 65535 if from 16-bit dicoms (i.e. CMRR seq)
 #
 # M. Elliott - 2017
+# ### Added edited imglob 2/19/19 bc it calls unspecified python, defaults to v3, and breaks via print
 
 # --------------------------
 Usage() {
@@ -13,17 +14,17 @@ Usage() {
 # --------------------------
 
 # --- Perform standard qa_script code ---
-source qa_preamble.sh
+source /data/joy/BBL/tutorials/code/multishell_diffusion/PreProc/qa_preamble.sh
 
 # --- Parse inputs ---
 if [ $# -lt 2 -o $# -gt 3 ]; then Usage; fi
-infile=`imglob -extension $1`
+infile=`/data/joy/BBL/tutorials/code/multishell_diffusion/PreProc/imglob -extension $1`
 indir=`dirname $infile` 
 inbase=`basename $infile`
 inroot=`remove_ext $inbase`
 maskfile=""
 if [ $# -gt 2 ]; then
-    maskfile=`imglob -extension $2`
+    maskfile=`/data/joy/BBL/tutorials/code/multishell_diffusion/PreProc/imglob -extension $2`
     shift
 fi
 resultfile=$2

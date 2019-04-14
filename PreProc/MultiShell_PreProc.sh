@@ -22,8 +22,8 @@ For gpu usage enter '1' as the third argument.
 exit
 fi
 
-general=/data/jux/BBL/studies/grmpy/rawData/$bblIDs/$SubDate_and_ID
-scripts=/home/melliott/scripts
+general=/data/joy/BBL/tutorials/exampleData/AMICO_NODDI/raw/$bblIDs/$SubDate_and_ID
+scripts=/data/joy/BBL/tutorials/code/multishell_diffusion/PreProc
 acqp=/data/jux/BBL/projects/multishell_diffusion/processedData/acqpars.txt
 template=/data/jux/BBL/projects/xcpWorkshop/input/template/PNCtemplate2mm.nii.gz
 slspec=/data/jux/BBL/projects/multishell_diffusion/processedData/slspec.txt
@@ -45,18 +45,18 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	indx=""
 
 # Make directory structure
-	mkdir /data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}
-	mkdir /data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}
-	mkdir /data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/prestats
-	mkdir /data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/prestats/qa
-	mkdir /data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/prestats/topup
-	mkdir /data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/prestats/eddy
-	mkdir /data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/coreg
-	mkdir /data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/norm
-	mkdir /data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/AMICO
+	mkdir /data/joy/BBL/tutorials/exampleData/AMICO_NODDI/Processed_Data/${bblIDs}
+	mkdir /data/joy/BBL/tutorials/exampleData/AMICO_NODDI/Processed_Data/${bblIDs}/${SubDate_and_ID}
+	mkdir /data/joy/BBL/tutorials/exampleData/AMICO_NODDI/Processed_Data/${bblIDs}/${SubDate_and_ID}/prestats
+	mkdir /data/joy/BBL/tutorials/exampleData/AMICO_NODDI/Processed_Data/${bblIDs}/${SubDate_and_ID}/prestats/qa
+	mkdir /data/joy/BBL/tutorials/exampleData/AMICO_NODDI/Processed_Data/${bblIDs}/${SubDate_and_ID}/prestats/topup
+	mkdir /data/joy/BBL/tutorials/exampleData/AMICO_NODDI/Processed_Data/${bblIDs}/${SubDate_and_ID}/prestats/eddy
+	mkdir /data/joy/BBL/tutorials/exampleData/AMICO_NODDI/Processed_Data/${bblIDs}/${SubDate_and_ID}/coreg
+	mkdir /data/joy/BBL/tutorials/exampleData/AMICO_NODDI/Processed_Data/${bblIDs}/${SubDate_and_ID}/norm
+	mkdir /data/joy/BBL/tutorials/exampleData/AMICO_NODDI/Processed_Data/${bblIDs}/${SubDate_and_ID}/AMICO
 
-	out=/data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}
-	eddy_outdir=/data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/prestats/eddy
+	out=/data/joy/BBL/tutorials/exampleData/AMICO_NODDI/Processed_Data/${bblIDs}/${SubDate_and_ID}
+	eddy_outdir=/data/joy/BBL/tutorials/exampleData/AMICO_NODDI/Processed_Data/${bblIDs}/${SubDate_and_ID}/prestats/eddy
 
 	mkdir -p ${eddy_outdir}
 
@@ -65,8 +65,6 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	#################################
 	echo "||||running quality assurance||||"
 
-	# Add qa script path
-	PATH=$PATH:/home/melliott/scripts
 
 	# Import bval and bvec
 	cp $unroundedbval $out/prestats/qa/
@@ -75,7 +73,7 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	# Round bvals up or down 5, corrects for scanner output error in bvals
 	$scripts/bval_rounder.sh $unroundedbval $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval 100
 	# Get quality assurance metrics on DTI data for each shell
-	$scripts/qa_dti_v4.sh $inputnifti $unroundedbval $bvec 100 $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_dwi.qa 
+	$scripts/qa_dti_v3.sh $inputnifti $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval $bvec $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_dwi.qa 
 	
 	# Zip all nifti files
 	gzip -f ${out}/prestats/qa/*.nii
@@ -133,8 +131,9 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 		eddy_output=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_gpu_sls.nii.gz
 	else
 		echo "|||--non-GPU version--|||"
-		/data/jux/BBL/projects/multishell_diffusion/multishell_diffusionScripts/eddy_openmp --imain=${inputnifti} --mask=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_bet_mean_iout_point_2_mask.nii.gz --index=/data/jux/BBL/projects/multishell_diffusion/processedData/index.txt --acqp=${acqp} --bvecs=${bvec} --bvals=${out}/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval --topup=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --repol --mb=4 --out=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_sls --ol_type=both --verbose
+		/data/jux/BBL/projects/multishell_diffusion/multishell_diffusionScripts/eddy_openmp --imain=${inputnifti} --mask=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_bet_mean_iout_point_2_mask.nii.gz --index=/data/jux/BBL/projects/multishell_diffusion/processedData/index.txt --acqp=${acqp} --bvecs=${bvec} --bvals=${out}/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval --ol_type=both --mb=4 --topup=$out/prestats/topup/${bblIDs}_${SubDate_and_ID}_topup --repol --out=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_sls 
 		eddy_output=$eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_sls.nii.gz
+
 	fi
 	
 	# Mask eddy output using topup mask, make first b0 only for coreg
@@ -162,7 +161,7 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	antsApplyTransforms -e 3 -d 3 -i ${masked_b0} -r ${template} -o $out/coreg/${bblIDs}_${SubDate_and_ID}_eddied_b0_template_space.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate1Warp.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate0GenericAffine.mat -t $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat
 
 	# Take T1 generated mask to sequence (diffusion) space
-	antsApplyTransforms -e 3 -d 3 -i /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/${bblIDs}_${SubDate_and_ID}_BrainExtractionMask.nii.gz -r /data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/prestats/eddy/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked_b0.nii.gz -o $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_seqSpaceT1Mask.nii.gz -t [/data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat,1] -n NearestNeighbor
+	antsApplyTransforms -e 3 -d 3 -i /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/${bblIDs}_${SubDate_and_ID}_BrainExtractionMask.nii.gz -r /data/joy/BBL/tutorials/exampleData/AMICO_NODDI/Processed_Data/${bblIDs}/${SubDate_and_ID}/prestats/eddy/${bblIDs}_${SubDate_and_ID}_eddied_topupMasked_b0.nii.gz -o $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_seqSpaceT1Mask.nii.gz -t [/data/joy/BBL/tutorials/exampleData/AMICO_NODDI/Processed_Data/${bblIDs}/${SubDate_and_ID}/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat,1] -n NearestNeighbor
 
 	#remask eddy output using T1 space generated mask
 
@@ -171,16 +170,16 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	########################################################
 	###                AMICO/NODDI			     ###
 	########################################################
-	##echo "||||running NODDI via AMICO||||"
+	echo "||||running NODDI via AMICO||||"
 
 	# Generate AMICO scheme (edit paths for files like mask and eddy output in generateamicoM script)
-	/data/jux/BBL/projects/multishell_diffusion/multishell_diffusionScripts/amicoSYRP/scripts/generateAmicoM_AP.pl $bblIDs $SubDate_and_ID
+	/data/joy/BBL/tutorials/code/multishell_diffusion/PreProc/generateAmicoM_AP.pl $bblIDs $SubDate_and_ID
 
 	# Run AMICO
-	/data/jux/BBL/projects/multishell_diffusion/multishell_diffusionScripts/amicoSYRP/scripts/runAmico.sh /data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/AMICO/runAMICO.m
+	/data/joy/BBL/tutorials/code/multishell_diffusion/PreProc/runAmico.sh ${out}/AMICO/runAMICO.m
 	
 	# Set NODDI Dir
-	NODDIdir=/data/jux/BBL/projects/multishell_diffusion/processedData/multishellPipelineFall2017/${bblIDs}/${SubDate_and_ID}/AMICO/NODDI
+	NODDIdir=/data/joy/BBL/tutorials/exampleData/AMICO_NODDI/Processed_Data/${bblIDs}/${SubDate_and_ID}/AMICO/NODDI
 	
 	# Zip and rename native space NODDI outputs to subejct specific
 	gzip $NODDIdir/*.nii
