@@ -167,6 +167,38 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 
 	fslmaths ${eddy_output} -mas $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_seqSpaceT1Mask.nii.gz $eddy_outdir/${bblIDs}_${SubDate_and_ID}_eddied_t1Masked.nii.gz
 
+
+	########################################################
+	###               DT MODEL FITS			     ###
+	########################################################
+	echo "||||Fitting DTI with mrtrix3||||"
+
+	echo "||||Unishell fit||||"
+	dwiextract  $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_eddied_sls.nii.gz -fslgrad  $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_eddied_sls.eddy_rotated_bvecs $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval -shell 0,800 - |dwi2tensor -mask  $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_seqSpaceT1Mask.nii.gz - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_b800_fit.nii.gz
+
+	# Calculate metrics
+	
+	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_b800_fit.nii.gz -adc - |mrconvert -force -stride 1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_ssMD.nii.gz
+
+	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_b800_fit.nii.gz -fa - |mrconvert -force -stride 1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_ssFA.nii.gz
+
+	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_b800_fit.nii.gz -rd - |mrconvert -force -stride 1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_ssRD.nii.gz
+
+	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_b800_fit.nii.gz -ad - |mrconvert -force -stride 1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_ssAD.nii.gz
+
+	echo "||||Multishell fit||||"
+	dwiextract  $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_eddied_sls.nii.gz -fslgrad  $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_eddied_sls.eddy_rotated_bvecs $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval -shell 0,300,800,2000 - |dwi2tensor -mask  $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_seqSpaceT1Mask.nii.gz - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_multishell_fit.nii.gz
+
+	# Calculate metrics
+	
+	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_multishell_fit.nii.gz -adc - |mrconvert -force -stride 1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_msMD.nii.gz
+
+	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_multishell_fit.nii.gz -fa - |mrconvert -force -stride 1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_msFA.nii.gz
+
+	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_multishell_fit.nii.gz -rd - |mrconvert -force -stride 1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_msRD.nii.gz
+
+	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_multishell_fit.nii.gz -ad - |mrconvert -force -stride 1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_msAD.nii.gz
+
 	########################################################
 	###                AMICO/NODDI			     ###
 	########################################################
@@ -176,7 +208,7 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	/data/joy/BBL/tutorials/code/multishell_diffusion/PreProc/generateAmicoM_AP.pl $bblIDs $SubDate_and_ID
 
 	# Run AMICO
-	/data/joy/BBL/tutorials/code/multishell_diffusion/PreProc/runAmico.sh ${out}/AMICO/runAMICO.m
+	#/data/joy/BBL/tutorials/code/multishell_diffusion/PreProc/runAmico.sh ${out}/AMICO/runAMICO.m
 	
 	# Set NODDI Dir
 	NODDIdir=/data/joy/BBL/tutorials/exampleData/AMICO_NODDI/Processed_Data/${bblIDs}/${SubDate_and_ID}/AMICO/NODDI
@@ -187,25 +219,6 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 	mv $NODDIdir/FIT_ICVF.nii.gz $NODDIdir/${bblIDs}_${SubDate_and_ID}_FIT_ICVF.nii.gz 
 	mv $NODDIdir/FIT_ISOVF.nii.gz $NODDIdir/${bblIDs}_${SubDate_and_ID}_FIT_ISOVF.nii.gz 
 	mv $NODDIdir/FIT_OD.nii.gz $NODDIdir/${bblIDs}_${SubDate_and_ID}_FIT_OD.nii.gz 
-	
-	########################################################
-	##       Native NODDI outputs to template space       ##
-	########################################################
-	##echo "||||bringing NODDI scalars to template space||||"
-
-	# Translate and Warp amico Outputs to normalized Space (dependent on structural to template translation and warp already being calculated, sequence to structural calculated above)
-
-	# Fit -> Template
-	antsApplyTransforms -e 3 -d 3 -i $NODDIdir/FIT_dir.nii.gz $NODDIdir/${bblIDs}_${SubDate_and_ID}_FIT_dir.nii.gz -r ${template} -o $out/norm/${bblIDs}_${SubDate_and_ID}_FIT_dir_Std.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate1Warp.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate0GenericAffine.mat -t $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat
-
-	# ICVF -> Template 
-	antsApplyTransforms -e 3 -d 3 -i $NODDIdir/${bblIDs}_${SubDate_and_ID}_FIT_ICVF.nii.gz -r ${template} -o $out/norm/${bblIDs}_${SubDate_and_ID}_FIT_ICVF_Std.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate1Warp.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate0GenericAffine.mat -t $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat
-
-	# ISOVF -> Template
-	antsApplyTransforms -e 3 -d 3 -i $NODDIdir/${bblIDs}_${SubDate_and_ID}_FIT_ISOVF.nii.gz -r ${template} -o $out/norm/${bblIDs}_${SubDate_and_ID}_FIT_ISOVF_Std.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate1Warp.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate0GenericAffine.mat -t $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat
-
-	# OD -> Template
-	antsApplyTransforms -e 3 -d 3 -i $NODDIdir/${bblIDs}_${SubDate_and_ID}_FIT_OD.nii.gz -r ${template} -o $out/norm/${bblIDs}_${SubDate_and_ID}_FIT_OD_Std.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate1Warp.nii.gz -t /data/jux/BBL/studies/grmpy/processedData/structural/struct_pipeline_20170716/$bblIDs/$SubDate_and_ID/antsCT/*SubjectToTemplate0GenericAffine.mat -t $out/coreg/${bblIDs}_${SubDate_and_ID}_MultiShDiff2StructRas.mat
 
 	# Add Simlinks
 	ln -s ${template} $out/norm/
