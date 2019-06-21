@@ -178,24 +178,24 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 
 	# Calculate metrics
 	
-	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_b800_fit.nii.gz -adc - |mrconvert -force -stride 1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_ssMD.nii.gz
+	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_b800_fit.nii.gz -adc - |mrconvert -force -stride -1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_ssMD.nii.gz
 
-	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_b800_fit.nii.gz -fa - |mrconvert -force -stride 1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_ssFA.nii.gz
+	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_b800_fit.nii.gz -fa - |mrconvert -force -stride -1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_ssFA.nii.gz
 
-	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_b800_fit.nii.gz -rd - |mrconvert -force -stride 1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_ssRD.nii.gz
+	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_b800_fit.nii.gz -rd - |mrconvert -force -stride -1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_ssRD.nii.gz
 
-	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_b800_fit.nii.gz -ad - |mrconvert -force -stride 1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_ssAD.nii.gz
+	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_b800_fit.nii.gz -ad - |mrconvert -force -stride -1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_ssAD.nii.gz
 
 	echo "||||Multishell fit||||"
 	dwiextract  $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_eddied_sls.nii.gz -fslgrad  $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_eddied_sls.eddy_rotated_bvecs $out/prestats/qa/${bblIDs}_${SubDate_and_ID}_roundedbval.bval -shell 0,300,800,2000 - |dwi2tensor -mask  $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_seqSpaceT1Mask.nii.gz - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_multishell_fit.nii.gz
 
 	# Calculate metrics
 	
-	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_multishell_fit.nii.gz -adc - |mrconvert -force -stride 1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_msMD.nii.gz
+	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_multishell_fit.nii.gz -adc - |mrconvert -force -stride -1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_msMD.nii.gz
 
-	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_multishell_fit.nii.gz -fa - |mrconvert -force -stride 1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_msFA.nii.gz
+	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_multishell_fit.nii.gz -fa - |mrconvert -force -stride -1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_msFA.nii.gz
 
-	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_multishell_fit.nii.gz -rd - |mrconvert -force -stride 1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_msRD.nii.gz
+	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_multishell_fit.nii.gz -rd - |mrconvert -force -stride -1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_msRD.nii.gz
 
 	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_multishell_fit.nii.gz -ad - |mrconvert -force -stride 1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_msAD.nii.gz
 
