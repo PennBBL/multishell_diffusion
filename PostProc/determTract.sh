@@ -51,24 +51,79 @@ tractography_output=$out/tractography/${bblIDs}_${SubDate_and_ID}_Tract.Bdouble
 #Camino tractography
 $cdir/track -inputmodel dt -seedfile "${seed_path}" -inputfile "${model_fit_path}" -tracker euler -interpolator linear -iterations 20 -curvethresh 60 | $cdir/procstreamlines -waypointfile "${waypoint_path}" -exclusionfile "${exclusion_path}" -truncateinexclusion -endpointfile "${seed_path}" -outputfile "${tractography_output}"
 
-################################################
-### Generate connectivity matrices in Camino ###
-################################################
 
-# Generate FA from camino
-cat $out/tractography/${bblIDs}_${SubDate_and_ID}_WdtModelFit.Bdouble | $cdir/fa | $cdir/voxel2image -outputroot $out/coreg/${bblIDs}_${SubDate_and_ID}_Camino_FA -header $seed_path -gzip
+#############################################################################
+###### CONMATS and generation of scalar maps appropriate for conmats ########
+#############################################################################
 
-##copy scalars to coreg folder so conmat can run
-cp $out/AMICO/NODDI/${bblIDs}_${SubDate_and_ID}_FIT_ICVF.nii.gz $out/coreg/
-cp $out/AMICO/NODDI/${bblIDs}_${SubDate_and_ID}_FIT_OD.nii.gz $out/coreg/
-cp $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_rtop.nii.gz $out/coreg/
+# Many metrics are not measures of diffusion restriction - perhaps even the opposite. In order to make these metrics of potential utility for measuring the construct of structural connectivity, they need to be leveraged as their inverse (MD, RD), or 1 subtracted by their value in the instance of volume fractions (NODDI).
+
+### DTI single shell (ss) and multishell (ms) #####
+
+
+# Mean FA ms matrix
+$cdir/conmat -inputfile "${tractography_output}" -targetfile "${seed_path}" -scalarfile $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_msFA.nii.gz -tractstat mean -outputroot $out/tractography/${bblIDs}_${SubDate_and_ID}_msFA_matrix
+# Mean FA ss matrix
+$cdir/conmat -inputfile "${tractography_output}" -targetfile "${seed_path}" -scalarfile $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_ssFA.nii.gz -tractstat mean -outputroot $out/tractography/${bblIDs}_${SubDate_and_ID}_ssFA_matrix
+
+
+# Make MD_invs
+#ms
+fslmaths $in/prestats/eddy/${bblIDs}_${SubDate_and_ID}_seqSpaceT1Mask.nii.gz -div $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_msMD.nii.gz $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_msMD_inv.nii.gz 
+#ss
+fslmaths $in/prestats/eddy/${bblIDs}_${SubDate_and_ID}_seqSpaceT1Mask.nii.gz -div $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_ssMD.nii.gz $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_ssMD_inv.nii.gz 
+
+# Mean MD_inv ms matrix
+$cdir/conmat -inputfile "${tractography_output}" -targetfile "${seed_path}" -scalarfile $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_msMD_inv.nii.gz -tractstat mean -outputroot $out/tractography/${bblIDs}_${SubDate_and_ID}_msMD_inv_matrix
+# Mean MD ss matrix
+$cdir/conmat -inputfile "${tractography_output}" -targetfile "${seed_path}" -scalarfile $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_ssMD_inv.nii.gz -tractstat mean -outputroot $out/tractography/${bblIDs}_${SubDate_and_ID}_ssMD_inv_matrix
+
+
+# Mean AD ms matrix
+$cdir/conmat -inputfile "${tractography_output}" -targetfile "${seed_path}" -scalarfile $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_msAD.nii.gz -tractstat mean -outputroot $out/tractography/${bblIDs}_${SubDate_and_ID}_msAD_matrix
+# Mean AD ss matrix
+$cdir/conmat -inputfile "${tractography_output}" -targetfile "${seed_path}" -scalarfile $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_ssAD.nii.gz -tractstat mean -outputroot $out/tractography/${bblIDs}_${SubDate_and_ID}_ssAD_matrix
+
+
+# Make RD_invs
+#ms
+fslmaths $in/prestats/eddy/${bblIDs}_${SubDate_and_ID}_seqSpaceT1Mask.nii.gz -div $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_msRD.nii.gz $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_msRD_inv.nii.gz 
+#ss
+fslmaths $in/prestats/eddy/${bblIDs}_${SubDate_and_ID}_seqSpaceT1Mask.nii.gz -div $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_ssRD.nii.gz $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_ssRD_inv.nii.gz 
+
+# Mean RD_inv ms matrix
+$cdir/conmat -inputfile "${tractography_output}" -targetfile "${seed_path}" -scalarfile $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_msRD_inv.nii.gz -tractstat mean -outputroot $out/tractography/${bblIDs}_${SubDate_and_ID}_msRD_inv_matrix
+# Mean RD ss matrix
+$cdir/conmat -inputfile "${tractography_output}" -targetfile "${seed_path}" -scalarfile $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_ssRD_inv.nii.gz -tractstat mean -outputroot $out/tractography/${bblIDs}_${SubDate_and_ID}_ssRD_inv_matrix
+
+
+### NODDI #####
+
 
 # Mean ICVF matrix
-$cdir/conmat -inputfile "${tractography_output}" -targetfile "${seed_path}" -scalarfile $out/coreg/${bblIDs}_${SubDate_and_ID}_FIT_ICVF.nii.gz -tractstat mean -outputroot $out/tractography/${bblIDs}_${SubDate_and_ID}_ICVF_matrix
+$cdir/conmat -inputfile "${tractography_output}" -targetfile "${seed_path}" -scalarfile $out/AMICO/NODDI/${bblIDs}_${SubDate_and_ID}_FIT_ICVF.nii.gz -tractstat mean -outputroot $out/tractography/${bblIDs}_${SubDate_and_ID}_ICVF_matrix
 
-# Mean FA matrix
-$cdir/conmat -inputfile "${tractography_output}" -targetfile "${seed_path}" -scalarfile $out/coreg/${bblIDs}_${SubDate_and_ID}_Camino_FA.nii.gz -tractstat mean -outputroot $out/tractography/${bblIDs}_${SubDate_and_ID}_FA_matrix
+
+# Make 1minODI
+fslmaths $in/prestats/eddy/${bblIDs}_${SubDate_and_ID}_seqSpaceT1Mask.nii.gz -min $out/AMICO/NODDI/${bblIDs}_${SubDate_and_ID}_FIT_OD.nii.gz $out/AMICO/NODDI/${bblIDs}_${SubDate_and_ID}_1min_ODI.nii.gz
+# 1minODI matrix
+$cdir/conmat -inputfile "${tractography_output}" -targetfile "${seed_path}" -scalarfile $out/AMICO/NODDI/${bblIDs}_${SubDate_and_ID}_1min_ODI.nii.gz -tractstat mean -outputroot $out/tractography/${bblIDs}_${SubDate_and_ID}_1minODI_matrix
+
+
+# Make 1minISOVF
+fslmaths $in/prestats/eddy/${bblIDs}_${SubDate_and_ID}_seqSpaceT1Mask.nii.gz -min $out/AMICO/NODDI/${bblIDs}_${SubDate_and_ID}_FIT_ISOVF.nii.gz $out/AMICO/NODDI/${bblIDs}_${SubDate_and_ID}_1min_ISOVF.nii.gz
+# 1minISOVF matrix
+$cdir/conmat -inputfile "${tractography_output}" -targetfile "${seed_path}" -scalarfile $out/AMICO/NODDI/${bblIDs}_${SubDate_and_ID}_1min_ISOVF.nii.gz -tractstat mean -outputroot $out/tractography/${bblIDs}_${SubDate_and_ID}_1minISOVF_matrix
+
+
+### MAPL ####
 
 # Mean RTOP matrix
-$cdir/conmat -inputfile "${tractography_output}" -targetfile "${seed_path}" -scalarfile $out/coreg/${bblIDs}_${SubDate_and_ID}_rtop.nii.gz -tractstat mean -outputroot $out/tractography/${bblIDs}_${SubDate_and_ID}_rtop_matrix
+$cdir/conmat -inputfile "${tractography_output}" -targetfile "${seed_path}" -scalarfile $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_rtop.nii.gz -tractstat mean -outputroot $out/tractography/${bblIDs}_${SubDate_and_ID}_rtop_matrix
+
+# Mean RTAP matrix
+$cdir/conmat -inputfile "${tractography_output}" -targetfile "${seed_path}" -scalarfile $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_rtap.nii.gz -tractstat mean -outputroot $out/tractography/${bblIDs}_${SubDate_and_ID}_rtap_matrix
+
+# Mean RTPP matrix - RTPP could potentially be used as an inverse for tract weighting too... went with this decision based on hyperintensity in the corpus callosum and increases in this value in mean white matter over aging.
+$cdir/conmat -inputfile "${tractography_output}" -targetfile "${seed_path}" -scalarfile $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_rtpp.nii.gz -tractstat mean -outputroot $out/tractography/${bblIDs}_${SubDate_and_ID}_rtpp_matrix
 
