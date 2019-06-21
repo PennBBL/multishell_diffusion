@@ -197,7 +197,7 @@ matlab -nodisplay -r 'run /data/jux/BBL/projects/multishell_diffusion/multishell
 
 	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_multishell_fit.nii.gz -rd - |mrconvert -force -stride -1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_msRD.nii.gz
 
-	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_multishell_fit.nii.gz -ad - |mrconvert -force -stride 1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_msAD.nii.gz
+	tensor2metric $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_mrtr_multishell_fit.nii.gz -ad - |mrconvert -force -stride -1,2,3 - $out/prestats/eddy/${bblIDs}_${SubDate_and_ID}_msAD.nii.gz
 
 	########################################################
 	###                AMICO/NODDI			     ###
