@@ -24,7 +24,7 @@ colnames(ids)<-c("bblid")
 sq_msFA<- read.csv("~/squareforms_6_21/msFA_all.csv", header = FALSE)
 
 # Make colnames specific to scalar
-for (i in 1:length(colnames(sq_msFA))) {
+for (i in 2:length(colnames(sq_msFA))) {
   names(sq_msFA)[i]<-paste((colnames(sq_msFA)[i]),"_msFA", sep = "")
 }
 
@@ -37,7 +37,7 @@ df<-merge(df, sq_msFA, by = "bblid")
 sq_ssFA<- read.csv("~/squareforms_6_21/ssFA_all.csv", header = FALSE)
 
 # Make colnames specific to scalar
-for (i in 1:length(colnames(sq_ssFA))) {
+for (i in 2:length(colnames(sq_ssFA))) {
   names(sq_ssFA)[i]<-paste((colnames(sq_ssFA)[i]),"_ssFA", sep = "")
 }
 
@@ -50,7 +50,7 @@ df<-merge(df, sq_ssFA, by = "bblid")
 sq_msAD<- read.csv("~/squareforms_6_21/msAD_all.csv", header = FALSE)
 
 # Make colnames specific to scalar
-for (i in 1:length(colnames(sq_msAD))) {
+for (i in 2:length(colnames(sq_msAD))) {
   names(sq_msAD)[i]<-paste((colnames(sq_msAD)[i]),"_msAD", sep = "")
 }
 
@@ -63,7 +63,7 @@ df<-merge(df, sq_msAD, by = "bblid")
 sq_ssAD<- read.csv("~/squareforms_6_21/ssAD_all.csv", header = FALSE)
 
 # Make colnames specific to scalar
-for (i in 1:length(colnames(sq_ssAD))) {
+for (i in 2:length(colnames(sq_ssAD))) {
   names(sq_ssAD)[i]<-paste((colnames(sq_ssAD)[i]),"_ssAD", sep = "")
 }
 
@@ -76,7 +76,7 @@ df<-merge(df, sq_ssAD, by = "bblid")
 sq_msMD_inv<- read.csv("~/squareforms_6_21/ms_MD_inv_all.csv", header = FALSE)
 
 # Make colnames specific to scalar
-for (i in 1:length(colnames(sq_msMD_inv))) {
+for (i in 2:length(colnames(sq_msMD_inv))) {
   names(sq_msMD_inv)[i]<-paste((colnames(sq_msMD_inv)[i]),"_msMD_inv", sep = "")
 }
 
@@ -89,7 +89,7 @@ df<-merge(df, sq_msMD_inv, by = "bblid")
 sq_ssMD_inv<- read.csv("~/squareforms_6_21/ss_MD_inv_all.csv", header = FALSE)
 
 # Make colnames specific to scalar
-for (i in 1:length(colnames(sq_ssMD_inv))) {
+for (i in 2:length(colnames(sq_ssMD_inv))) {
   names(sq_ssMD_inv)[i]<-paste((colnames(sq_ssMD_inv)[i]),"_ssMD_inv", sep = "")
 }
 
@@ -103,7 +103,7 @@ df<-merge(df, sq_ssMD_inv, by = "bblid")
 sq_msRD_inv<- read.csv("~/squareforms_6_21/ms_RD_inv_all.csv", header = FALSE)
 
 # Make colnames specific to scalar
-for (i in 1:length(colnames(sq_msRD_inv))) {
+for (i in 2:length(colnames(sq_msRD_inv))) {
   names(sq_msRD_inv)[i]<-paste((colnames(sq_msRD_inv)[i]),"_msRD_inv", sep = "")
 }
 
@@ -117,7 +117,7 @@ df<-merge(df, sq_msRD_inv, by = "bblid")
 sq_ssRD_inv<- read.csv("~/squareforms_6_21/ss_RD_inv_all.csv", header = FALSE)
 
 # Make colnames specific to scalar
-for (i in 1:length(colnames(sq_ssRD_inv))) {
+for (i in 2:length(colnames(sq_ssRD_inv))) {
   names(sq_ssRD_inv)[i]<-paste((colnames(sq_ssRD_inv)[i]),"_ssRD_inv", sep = "")
 }
 
@@ -130,7 +130,7 @@ df<-merge(df, sq_ssRD_inv, by = "bblid")
 sq_ICVF<- read.csv("~/squareforms_6_21/ICVF_all.csv", header = FALSE)
 
 # Make colnames specific to scalar
-for (i in 1:length(colnames(sq_ICVF))) {
+for (i in 2:length(colnames(sq_ICVF))) {
   names(sq_ICVF)[i]<-paste((colnames(sq_ICVF)[i]),"_ICVF", sep = "")
 }
 
@@ -143,7 +143,7 @@ df<-merge(df, sq_ICVF, by = "bblid")
 sq_1minODI<- read.csv("~/squareforms_6_21/1minODI_all.csv", header = FALSE)
 
 # Make colnames specific to scalar
-for (i in 1:length(colnames(sq_1minODI))) {
+for (i in 2:length(colnames(sq_1minODI))) {
   names(sq_1minODI)[i]<-paste((colnames(sq_1minODI)[i]),"_1minODI", sep = "")
 }
 
@@ -157,7 +157,7 @@ df<-merge(df, sq_1minODI, by = "bblid")
 sq_1minISOVF<- read.csv("~/squareforms_6_21/1minISOVF_all.csv", header = FALSE)
 
 # Make colnames specific to scalar
-for (i in 1:length(colnames(sq_1minISOVF))) {
+for (i in 2:length(colnames(sq_1minISOVF))) {
   names(sq_1minISOVF)[i]<-paste((colnames(sq_1minISOVF)[i]),"_1minISOVF", sep = "")
 }
 
@@ -171,7 +171,7 @@ df<-merge(df, sq_1minISOVF, by = "bblid")
 sq_rtop<- read.csv("~/squareforms_6_21/rtop_all.csv", header = FALSE)
 
 # Make colnames specific to scalar
-for (i in 1:length(colnames(sq_rtop))) {
+for (i in 2:length(colnames(sq_rtop))) {
   names(sq_rtop)[i]<-paste((colnames(sq_rtop)[i]),"_rtop", sep = "")
 }
 
@@ -185,7 +185,7 @@ df<-merge(df, sq_rtop, by = "bblid")
 sq_rtap<- read.csv("~/squareforms_6_21/rtap_all.csv", header = FALSE)
 
 # Make colnames specific to scalar
-for (i in 1:length(colnames(sq_rtap))) {
+for (i in 2:length(colnames(sq_rtap))) {
   names(sq_rtap)[i]<-paste((colnames(sq_rtap)[i]),"_rtap", sep = "")
 }
 
@@ -199,7 +199,7 @@ df<-merge(df, sq_rtap, by = "bblid")
 sq_rtpp<- read.csv("~/squareforms_6_21/rtpp_all.csv", header = FALSE)
 
 # Make colnames specific to scalar
-for (i in 1:length(colnames(sq_rtpp))) {
+for (i in 2:length(colnames(sq_rtpp))) {
   names(sq_rtpp)[i]<-paste((colnames(sq_rtpp)[i]),"_rtpp", sep = "")
 }
 
