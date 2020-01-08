@@ -1,0 +1,1100 @@
+---
+title: "Multishell_comparisons"
+author: "Adam Pines"
+date: "1/14/2019"
+output: html_document
+---
+
+```{r}
+library(mgcv)
+library(visreg)
+library(ggplot2)
+library(scales)
+library(parallel)
+
+#### Read in Data
+
+# Demographics
+demographics_20180824 <- read.csv("~/Downloads/9_13_stats/demographics_20180824.csv", comment.char="#")
+
+# QA
+QAgrmpy_9_12 <- read.csv("~/Downloads/9_13_stats/QAgrmpy_9_12.csv")
+
+#average in voxelwise wm mask
+average_inwm<-read.csv('~/Desktop/Archive/grmpy/6_5/mean_wm.csv')
+
+#### Format Data
+df<-demographics_20180824
+df$bblid->df$bblIDs
+df<-df[-c(df$bblid)]
+
+QAgrmpy_9_12$bblid->QAgrmpy_9_12$bblIDs
+df<-merge(df,QAgrmpy_9_12, by = "bblIDs")
+
+df<-merge(df,average_inwm, by = "bblIDs")
+
+df<-df[!duplicated(df$bblIDs), ]
+
+df$sex<-as.factor(df$sex)
+
+# just lines above these for qa plots - jhu will add a subj and change up coloring order of exclusions
+
+
+#JHU atlas data
+FAss<-read.csv('~/Desktop/MultiSh_Submission/jhu/JHU_stats/SSFA.csv')
+FAms<-read.csv('~/Desktop/MultiSh_Submission/jhu/JHU_stats/MSFA.csv')
+MDss<-read.csv('~/Desktop/MultiSh_Submission/jhu/JHU_stats/SSMD.csv')
+MDms<-read.csv('~/Desktop/MultiSh_Submission/jhu/JHU_stats/MSMD.csv')
+ADss<-read.csv('~/Desktop/MultiSh_Submission/jhu/JHU_stats/SSAD.csv')
+ADms<-read.csv('~/Desktop/MultiSh_Submission/jhu/JHU_stats/MSAD.csv')
+RDss<-read.csv('~/Desktop/MultiSh_Submission/jhu/JHU_stats/SSRD.csv')
+RDms<-read.csv('~/Desktop/MultiSh_Submission/jhu/JHU_stats/MSRD.csv')
+ICVF<-read.csv('~/Desktop/MultiSh_Submission/jhu/JHU_stats/ICVF.csv')
+ISOVF<-read.csv('~/Desktop/MultiSh_Submission/jhu/JHU_stats/ISOVF.csv')
+ODI<-read.csv('~/Desktop/MultiSh_Submission/jhu/JHU_stats/ODI.csv')
+RTOP<-read.csv('~/Desktop/MultiSh_Submission/jhu/JHU_stats/RTOP.csv')
+RTAP<-read.csv('~/Desktop/MultiSh_Submission/jhu/JHU_stats/RTAP.csv')
+RTPP<-read.csv('~/Desktop/MultiSh_Submission/jhu/JHU_stats/RTPP.csv')
+
+# fix colnames and subject names
+JHU_list<-list(FAss,FAms,MDss,MDms,ADss,ADms,RDss,RDms,ICVF,ISOVF,ODI,RTOP,RTAP,RTPP)
+                    
+                       
+JHU_fixed<-lapply(JHU_list, function(x) {
+                    # match col names
+                    colnames(x)[1]<-'bblIDs'
+                    # grab just field 9 (subject id)
+                    strs<-strsplit(as.character(x$bblIDs),"/")
+                    # get every 9th element from unlisted "strs"
+                    newstrs<-lapply(strs, function(x) {
+                    x[9]
+                    })
+                    x$bblIDs<-newstrs
+                    # now remove two empty columns
+                    x<-x[,-c(2:3)]
+                    # replace 0s with NAs
+                    x[x==0]<-NA
+                    x
+                    })
+
+### remaking each scalar as a new dataframe - inefficient coding ftw
+FAss<-data.frame(JHU_fixed[1])
+FAms<-data.frame(JHU_fixed[2])
+MDss<-data.frame(JHU_fixed[3])
+MDms<-data.frame(JHU_fixed[4])
+ADss<-data.frame(JHU_fixed[5])
+ADms<-data.frame(JHU_fixed[6])
+RDss<-data.frame(JHU_fixed[7])
+RDms<-data.frame(JHU_fixed[8])
+ICVF<-data.frame(JHU_fixed[9])
+ISOVF<-data.frame(JHU_fixed[10])
+ODI<-data.frame(JHU_fixed[11])
+RTOP<-data.frame(JHU_fixed[12])
+RTAP<-data.frame(JHU_fixed[13])
+RTPP<-data.frame(JHU_fixed[14])
+
+for (i in 2:length(colnames(FAss))) {
+  names(FAss)[i]<-paste((colnames(FAss)[i]),"_FAss", sep = "")
+}
+
+for (i in 2:length(colnames(FAms))) {
+  names(FAms)[i]<-paste((colnames(FAms)[i]),"_FAms", sep = "")
+}
+
+for (i in 2:length(colnames(MDss))) {
+  names(MDss)[i]<-paste((colnames(MDss)[i]),"_MDss", sep = "")
+}
+
+for (i in 2:length(colnames(MDms))) {
+  names(MDms)[i]<-paste((colnames(MDms)[i]),"_MDms", sep = "")
+}
+
+for (i in 2:length(colnames(ADss))) {
+  names(ADss)[i]<-paste((colnames(ADss)[i]),"_ADss", sep = "")
+}
+
+for (i in 2:length(colnames(ADms))) {
+  names(ADms)[i]<-paste((colnames(ADms)[i]),"_ADms", sep = "")
+}
+
+for (i in 2:length(colnames(RDss))) {
+  names(RDss)[i]<-paste((colnames(RDss)[i]),"_RDss", sep = "")
+}
+
+for (i in 2:length(colnames(RDms))) {
+  names(RDms)[i]<-paste((colnames(RDms)[i]),"_RDms", sep = "")
+}
+
+for (i in 2:length(colnames(ICVF))) {
+  names(ICVF)[i]<-paste((colnames(ICVF)[i]),"_ICVF", sep = "")
+}
+
+for (i in 2:length(colnames(ISOVF))) {
+  names(ISOVF)[i]<-paste((colnames(ISOVF)[i]),"_ISOVF", sep = "")
+}
+
+for (i in 2:length(colnames(ODI))) {
+  names(ODI)[i]<-paste((colnames(ODI)[i]),"_ODI", sep = "")
+}
+
+for (i in 2:length(colnames(RTOP))) {
+  names(RTOP)[i]<-paste((colnames(RTOP)[i]),"_RTOP", sep = "")
+}
+
+for (i in 2:length(colnames(RTAP))) {
+  names(RTAP)[i]<-paste((colnames(RTAP)[i]),"_RTAP", sep = "")
+}
+
+for (i in 2:length(colnames(RTPP))) {
+  names(RTPP)[i]<-paste((colnames(RTPP)[i]),"_RTPP", sep = "")
+}
+
+
+df<-merge(df,FAss, by = "bblIDs")
+df<-merge(df,FAms, by = "bblIDs")
+df<-merge(df,MDss, by = "bblIDs")
+df<-merge(df,MDms, by = "bblIDs")
+df<-merge(df,ADss, by = "bblIDs")
+df<-merge(df,ADms, by = "bblIDs")
+df<-merge(df,RDss, by = "bblIDs")
+df<-merge(df,RDms, by = "bblIDs")
+df<-merge(df,ICVF, by = "bblIDs")
+df<-merge(df,ISOVF, by = "bblIDs")
+df<-merge(df,ODI, by = "bblIDs")
+df<-merge(df,RTOP, by = "bblIDs")
+df<-merge(df,RTAP, by = "bblIDs")
+df<-merge(df,RTPP, by = "bblIDs")
+df<-df[!duplicated(df$bblIDs), ]
+```
+
+```{r}
+#### print n, remove low-quality scans
+
+# n =
+length(df[,1])
+
+df$t1exclude<-rep(0,dim(df)[1])
+df$t1exclude[df$bblIDs=='86722']=1
+df$t1exclude<-as.factor(df$t1exclude)
+
+
+# make exclusion plot for fig s1
+ggplot(data=df,aes(x=b800,y=meanRELrms)) + geom_point(colour="green4",size=2) + geom_point(data=df[c(15,88),],aes(x=b800,y=meanRELrms),colour="red",size=2) +geom_point(data=df[111:113,],aes(x=b800,y=meanRELrms),colour="gold2",size=2) + xlab("Mean Temporal Signal-to-Noise Ratio (b=800)") + ylab("Mean Relative Root Mean Squared Displacement (b=0)")+theme_minimal(base_size = 20)
+
+# and relrms and b800tsnr plots by age for s1 (created without exclusions above)
+# relrms
+ggplot(data=df,aes(x=visitagemonths/12,y=meanRELrms)) + geom_point(colour="green4",size=2) + geom_point(data=df[c(15,88),],aes(x=visitagemonths/12,y=meanRELrms),colour="red",size=2) +geom_point(data=df[111:113,],aes(x=visitagemonths/12,y=meanRELrms),colour="gold2",size=2) + xlab("Age (years)") + ylab("Mean Relative Root Mean Squared Displacement") +theme_minimal(base_size = 20)
+
+ggplot(data=df,aes(x=visitagemonths/12,y=b800)) + geom_point(colour="green4",size=2) + geom_point(data=df[c(15,88),],aes(x=visitagemonths/12,y=b800),colour="red",size=2) +geom_point(data=df[111:113,],aes(x=visitagemonths/12,y=b800),colour="gold2",size=2) + xlab("Age (years)") + ylab("Mean Temporal Signal-to-Noise Ratio")+theme_minimal(base_size = 20)
+
+# QA exclusion
+
+# T1
+t1ex<-grep('86722',df$bblIDs)
+
+# DWI
+dwiex<-grep('116354',df$bblIDs)
+# primary exclusions (from init submis)
+df<-df[-c(dwiex,t1ex),]
+# n after exlcusions
+length(df[,1])
+
+
+#### Extended exclusions
+
+# bad tsnr in 800 shell
+
+dwiex_tsnr<-grep('128154',df$bblIDs)
+# other bad relrms
+dwiex_extend<-grep('127611',df$bblIDs)
+dwiex_extend2<-grep('128061',df$bblIDs)
+
+#tsnr
+
+df<-df[-c(dwiex_extend,dwiex_tsnr,dwiex_extend2),]
+length(df[,1])
+
+```
+
+```{r}
+#### Make gams, report statistics
+
+# Primary gams for comparison, was k=4 in first submission, changed to k=3 to mitigate potential overfitting
+ssfa_gam<-gam(ssFA~s(visitagemonths,k=3)+sex+meanRELrms,data=df)
+icvf_gam<-gam(ICVF~s(visitagemonths,k=3)+sex+meanRELrms,data=df)
+isovf_gam<-gam(ISOVF~s(visitagemonths,k=3)+sex+meanRELrms,data=df)
+odi_gam<-gam(ODI~s(visitagemonths,k=3)+sex+meanRELrms,data=df)
+rtop_gam<-gam(rtop~s(visitagemonths,k=3)+sex+meanRELrms,data=df)
+ssmd_gam<-gam(ssMD~s(visitagemonths,k=3)+sex+meanRELrms,data=df)
+ssrd_gam<-gam(ssRD~s(visitagemonths,k=3)+sex+meanRELrms,data=df)
+ssad_gam<-gam(ssAD~s(visitagemonths,k=3)+sex+meanRELrms,data=df)
+rtpp_gam<-gam(rtpp~s(visitagemonths,k=3)+sex+meanRELrms,data=df)
+rtap_gam<-gam(rtap~s(visitagemonths,k=3)+sex+meanRELrms,data=df)
+msmd_gam<-gam(msMD~s(visitagemonths,k=3)+sex+meanRELrms,data=df)
+msfa_gam<-gam(msFA~s(visitagemonths,k=3)+sex+meanRELrms,data=df)
+msad_gam<-gam(msAD~s(visitagemonths,k=3)+sex+meanRELrms,data=df)
+msrd_gam<-gam(msRD~s(visitagemonths,k=3)+sex+meanRELrms,data=df)
+
+summary(ssfa_gam)
+summary(ssmd_gam)
+summary(ssad_gam)
+summary(ssrd_gam)
+
+summary(msfa_gam)
+summary(msmd_gam)
+summary(msad_gam)
+summary(msrd_gam)
+
+summary(icvf_gam)
+summary(isovf_gam)
+summary(odi_gam)
+
+summary(rtop_gam)
+summary(rtap_gam)
+summary(rtpp_gam)
+
+# create a vector for storing gam p-values for each metric
+pvec<-as.data.frame(rep(0,14))
+pvec$metric<-c("ssFA", "ssMD", "ssAD", "ssRD", "msFA", "msMD", "msAD", "msRD", "ICVF", "ODI", "ISOVF", "RTOP", "RTAP", "RTPP")
+pvec$`rep(0, 14)`<-c(summary(ssfa_gam)$s.pv, summary(ssmd_gam)$s.pv, summary(ssad_gam)$s.pv,summary(ssrd_gam)$s.pv, summary(msfa_gam)$s.pv, summary(msmd_gam)$s.pv, summary(msad_gam)$s.pv, summary(msrd_gam)$s.pv, summary(icvf_gam)$s.pv, summary(odi_gam)$s.pv, summary(isovf_gam)$s.pv, summary(rtop_gam)$s.pv, summary(rtap_gam)$s.pv, summary(rtpp_gam)$s.pv)
+colnames(pvec)<-c("pval", "metric")
+pvec$fam<-factor(c("ssDTI", "ssDTI", "ssDTI", "ssDTI", "msDTI", "msDTI", "msDTI", "msDTI", "NODDI", "NODDI", "NODDI", "MAPL", "MAPL", "MAPL"),ordered = TRUE)
+pvec$qnorm<-qnorm(pvec$pval)*-1
+```
+
+
+```{r}
+#### Extract residuals for plotting
+
+# Model non-age effects (linear model as age is the only non-linear term)
+ssfa_lm<-lm(ssFA~sex+meanRELrms,data=df)
+msfa_lm<-lm(msFA~sex+meanRELrms,data=df)
+ssad_lm<-lm(df$ssAD~sex+meanRELrms,data=df)
+msad_lm<-lm(df$msAD~sex+meanRELrms,data=df)
+ssmd_lm<-lm(df$ssMD~sex+meanRELrms,data=df)
+msmd_lm<-lm(df$msMD~sex+meanRELrms,data=df)
+ssrd_lm<-lm(df$ssRD~sex+meanRELrms,data=df)
+msrd_lm<-lm(df$msRD~sex+meanRELrms,data=df)
+icvf_lm<-lm(ICVF~sex+meanRELrms,data=df)
+odi_lm<-lm(ODI~sex+meanRELrms,data=df)
+isovf_lm<-lm(ISOVF~sex+meanRELrms,data=df)
+rtop_lm<-lm(rtop~sex+meanRELrms,data=df)
+rtpp_lm<-lm(rtpp~sex+meanRELrms,data=df)
+rtap_lm<-lm(rtap~sex+meanRELrms,data=df)
+
+# Model non-relRMS effects
+ssfa_gam_nrms<-gam(ssFA~s(visitagemonths,k=3)+sex,data=df)
+msfa_gam_nrms<-gam(msFA~s(visitagemonths,k=3)+sex,data=df)
+ssad_gam_nrms<-gam(df$ssAD~s(visitagemonths,k=3)+sex,data=df)
+msad_gam_nrms<-gam(df$msAD~s(visitagemonths,k=3)+sex,data=df)
+ssmd_gam_nrms<-gam(df$ssMD~s(visitagemonths,k=3)+sex,data=df)
+msmd_gam_nrms<-gam(df$msMD~s(visitagemonths,k=3)+sex,data=df)
+ssrd_gam_nrms<-gam(df$ssRD~s(visitagemonths,k=3)+sex,data=df)
+msrd_gam_nrms<-gam(df$msRD~s(visitagemonths,k=3)+sex,data=df)
+icvf_gam_nrms<-gam(ICVF~s(visitagemonths,k=3)+sex,data=df)
+odi_gam_nrms<-gam(ODI~s(visitagemonths,k=3)+sex,data=df)
+isovf_gam_nrms<-gam(ISOVF~s(visitagemonths,k=3)+sex,data=df)
+rtop_gam_nrms<-gam(rtop~s(visitagemonths,k=3)+sex,data=df)
+rtpp_gam_nrms<-gam(rtpp~s(visitagemonths,k=3)+sex,data=df)
+rtap_gam_nrms<-gam(rtap~s(visitagemonths,k=3)+sex,data=df)
+
+# Get residuals
+df$ssfa_resid<-ssfa_lm$residuals+mean(df$ssFA)
+df$msfa_resid<-msfa_lm$residuals+mean(df$msFA)
+df$ssad_resid<-ssad_lm$residuals+mean(df$ssAD)
+df$msad_resid<-msad_lm$residuals+mean(df$msAD)
+df$ssmd_resid<-ssmd_lm$residuals+mean(df$ssMD)
+df$msmd_resid<-msmd_lm$residuals+mean(df$msMD)
+df$ssrd_resid<-ssrd_lm$residuals+mean(df$ssRD)
+df$msrd_resid<-msrd_lm$residuals+mean(df$msRD)
+df$icvf_resid<-icvf_lm$residuals+mean(df$ICVF)
+df$odi_resid<-odi_lm$residuals+mean(df$ODI)
+df$isovf_resid<-isovf_lm$residuals+mean(df$ISOVF)
+df$rtop_resid<-rtop_lm$residuals+mean(df$rtop)
+df$rtpp_resid<-rtpp_lm$residuals+mean(df$rtpp)
+df$rtap_resid<-rtap_lm$residuals+mean(df$rtap)
+
+df$ssfa_resid_nrms<-ssfa_gam_nrms$residuals+mean(df$ssFA)
+df$msfa_resid_nrms<-msfa_gam_nrms$residuals+mean(df$msFA)
+df$ssad_resid_nrms<-ssad_gam_nrms$residuals+mean(df$ssAD)
+df$msad_resid_nrms<-msad_gam_nrms$residuals+mean(df$msAD)
+df$ssmd_resid_nrms<-ssmd_gam_nrms$residuals+mean(df$ssMD)
+df$msmd_resid_nrms<-msmd_gam_nrms$residuals+mean(df$msMD)
+df$ssrd_resid_nrms<-ssrd_gam_nrms$residuals+mean(df$ssRD)
+df$msrd_resid_nrms<-msrd_gam_nrms$residuals+mean(df$msRD)
+df$icvf_resid_nrms<-icvf_gam_nrms$residuals+mean(df$ICVF)
+df$odi_resid_nrms<-odi_gam_nrms$residuals+mean(df$ODI)
+df$isovf_resid_nrms<-isovf_gam_nrms$residuals+mean(df$ISOVF)
+df$rtop_resid_nrms<-rtop_gam_nrms$residuals+mean(df$rtop)
+df$rtpp_resid_nrms<-rtpp_gam_nrms$residuals+mean(df$rtpp)
+df$rtap_resid_nrms<-rtap_gam_nrms$residuals+mean(df$rtap)
+
+```
+
+
+```{r}
+# head motion plots from residuals
+
+
+### saved as 600x500, transformed to 400x333.333 in illustrator
+#FA_ssxrms
+ggplot(df,aes(x=meanRELrms,y=ssfa_resid_nrms)) + geom_smooth(method = 'lm', colour=('#4b5e72'), fill = "#7b98b7", alpha = .8) + geom_point() + xlab("Mean Relative RMS") +ylab("Average ssFA") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=30,colour = "black"), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r = 27, b = 0, l = 0)))
+
+#FA_msxrms
+ggplot(df,aes(x=meanRELrms,y=msfa_resid_nrms)) + scale_y_continuous(breaks=seq(.43,.49,by=.03))+ geom_smooth(method = 'lm', colour=('black'), fill = "#48627C", alpha = .8) + geom_point(colour="white", size= 2) + xlab("Mean Relative RMS") +ylab("Average msFA") + theme(plot.background=element_rect(fill="darkorchid4"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'white', size = 2), axis.line.y = element_line(colour = 'white', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text.x = element_text(face="bold",size=30, colour="white"),axis.text.y = element_text(face="bold",size=30, colour="white"), axis.title = element_text(size=30,face="bold", colour="white"), axis.title.y = element_text(margin = margin(t = 0, r = 5, b = 0, l = 0)))
+
+#AD_ssxAGE
+ggplot(df,aes(x=meanRELrms,y=ssad_resid_nrms)) + geom_smooth(method = 'lm', colour=('#4b5e72'), fill = "#7b98b7", alpha = .8) + geom_point() + xlab("Mean Relative RMS") +ylab("Average ssAD") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=20), axis.title = element_text(size=26), axis.title.y = element_text(margin = margin(t = 0, r = 27, b = 0, l = 0)))
+
+#AD_msxAGE
+ggplot(df,aes(x=meanRELrms,y=msad_resid_nrms)) + geom_smooth(method = 'lm', colour=('#4b5e72'), fill = "#7b98b7", alpha = .8) + geom_point() + xlab("Mean Relative RMS") +ylab("Average msAD") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=20), axis.title = element_text(size=26), axis.title.y = element_text(margin = margin(t = 0, r = 27, b = 0, l = 0)))
+
+#RD_ssxAGE
+ggplot(df,aes(x=meanRELrms,y=ssrd_resid_nrms)) + geom_smooth(method = 'lm', colour=('#4b5e72'), fill = "#7b98b7", alpha = .8) + geom_point() + xlab("Mean Relative RMS") +ylab("Average ssrd inverse") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=20), axis.title = element_text(size=26), axis.title.y = element_text(margin = margin(t = 0, r = 27, b = 0, l = 0)))
+
+#RD_msxAGE
+ggplot(df,aes(x=meanRELrms,y=msrd_resid_nrms)) + geom_smooth(method = 'lm', colour=('#4b5e72'), fill = "#7b98b7", alpha = .8) + geom_point() + xlab("Mean Relative RMS") +ylab("Average msrd inverse") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=20), axis.title = element_text(size=26), axis.title.y = element_text(margin = margin(t = 0, r = 27, b = 0, l = 0)))
+
+#MD_ssxAGE
+ggplot(df,aes(x=meanRELrms,y=ssmd_resid_nrms)) + geom_smooth(method = 'lm', colour=('#4b5e72'), fill = "#7b98b7", alpha = .8) + geom_point() + xlab("Mean Relative RMS") +ylab("Average ssmd inverse") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=20), axis.title = element_text(size=26), axis.title.y = element_text(margin = margin(t = 0, r = 27, b = 0, l = 0)))
+
+#MD_msxrelrms
+ggplot(df,aes(x=meanRELrms,y=msmd_resid_nrms)) + scale_y_continuous(labels=scientific, breaks=seq(6.6e-4,7.2e-4,by=.3e-4)) + geom_smooth(method = 'lm', colour=('black'), fill = "#48627C", alpha = 1) + geom_point(size=2,colour="black") + xlab("Mean Relative RMS") +ylab("Average msMD") + theme(, panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.ticks = element_line(colour="black"), axis.text.x = element_text(face="bold",size=30, colour="black"), axis.text.y = element_text(face="bold",size=23, colour="black"), axis.title = element_text(face="bold",size=30, colour="black"), axis.title.y = element_text(margin = margin(t = 0, r = 5, b = 0, l = 0)))
+
+
+#ICVFxrelrms
+ggplot(df,aes(x=meanRELrms,y=icvf_resid_nrms)) + scale_y_continuous(breaks = seq(.52, .60, by=.04)) + geom_smooth(method = 'lm', colour=('#8a962e'), fill = "#cee045", alpha = 1) + geom_point(size=2, color="black") + xlab("Mean Relative RMS") +ylab("Average ICVF") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.ticks=element_line(color="black"), axis.text = element_text(face="bold",size=30, colour = "black"), axis.title = element_text(size=30,face="bold", colour="black"), axis.title.y = element_text(margin = margin(t = 0, r = 27, b = 0, l = 0)))
+
+#ODIxrelrms
+ggplot(df,aes(x=meanRELrms,y=odi_resid_nrms)) + geom_smooth(method = 'lm', colour=('#8a962e'), fill = "#cee045", alpha = .8) + geom_point() + xlab("Mean Relative RMS") +ylab("Average ODI") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text.x = element_text(face="bold",size=30, colour="black"),axis.text.y = element_text(face="bold",size=30,colour="black"), axis.title = element_text(size=30,face="bold", colour="black"), axis.title.y = element_text(margin = margin(t = 0, r = 27, b = 0, l = 0)))
+
+#ISOVFxAGE
+ggplot(df,aes(x=meanRELrms,y=isovf_resid_nrms)) + geom_smooth(method = 'lm', colour=('#8a962e'), fill = "#cee045", alpha = .8) + geom_point() + xlab("Mean Relative RMS") +ylab("Average ISOVF") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=20), axis.title = element_text(size=26), axis.title.y = element_text(margin = margin(t = 0, r = 27, b = 0, l = 0)))
+
+
+#RTOPxrelrms
+ggplot(df,aes(x=meanRELrms,y=rtop_resid_nrms)) + scale_y_continuous(labels = scientific, breaks = seq(3.6e5, 5.3e5,by=.7e5)) + geom_smooth(method = 'lm', colour=('#324c1d'), fill = "#64933b", alpha = .8) + geom_point(size=2) + xlab("Mean Relative RMS") +ylab("Average RTOP") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(plot.background=element_rect(), axis.line.x = element_line(size = 2), axis.line.y = element_line(size = 2), axis.ticks = element_line(), axis.ticks.length = unit(.25, "cm"), axis.text.x = element_text(face="bold",size=30,colour="black"), axis.text.y = element_text(face="bold",size=23, colour = "black"), axis.title = element_text(size=30,face="bold"), axis.title.y = element_text(margin = margin(t = 0, r = 0, b = 0, l = 0)))
+
+#RTpPxnrms
+ggplot(df,aes(x=meanRELrms,y=rtpp_resid_nrms)) + scale_y_continuous(breaks = seq(48, 54,by=2)) + geom_smooth(method = 'lm', colour=('#324c1d'), fill = "#64933b", alpha = .8) + geom_point() + xlab("Mean Relative RMS") +ylab("Average RTPP") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(colour = 'black',face="bold",size=30), axis.title = element_text(size=30,face="bold",colour = 'black'), axis.title.y = element_text(margin = margin(t = 0, r = 45, b = 0, l = 0)))
+
+#RTaPxAGE
+ggplot(df,aes(x=meanRELrms,y=rtap_resid_nrms)) + geom_smooth(method = 'lm', colour=('#324c1d'), fill = "#64933b", alpha = .8) + geom_point() + xlab("Age (years)") +ylab("Average RTAP") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=30,color = "black"), axis.title = element_text(face="bold",size=30,color = "black"), axis.title.y = element_text(margin = margin(t = 0, r = 27, b = 0, l = 0)))
+
+
+cor.test(df$meanRELrms,df$ssfa_resid_nrms)
+cor.test(df$meanRELrms,df$ssmd_resid_nrms)
+cor.test(df$meanRELrms,df$ssrd_resid_nrms)
+cor.test(df$meanRELrms,df$ssad_resid_nrms)
+cor.test(df$meanRELrms,df$msfa_resid_nrms)
+cor.test(df$meanRELrms,df$msmd_resid_nrms)
+cor.test(df$meanRELrms,df$msrd_resid_nrms)
+cor.test(df$meanRELrms,df$msad_resid_nrms)
+cor.test(df$meanRELrms,df$icvf_resid_nrms)
+cor.test(df$meanRELrms,df$isovf_resid_nrms)
+cor.test(df$meanRELrms,df$odi_resid_nrms)
+cor.test(df$meanRELrms,df$rtop_resid_nrms)
+cor.test(df$meanRELrms,df$rtap_resid_nrms)
+cor.test(df$meanRELrms,df$rtpp_resid_nrms)
+```
+
+
+
+```{r}
+#Corrplot
+library(corrplot)
+read.csv('~/Desktop/archive/grmpy/for_corplot_mstop_12_7.csv')->M
+read.csv('~/Desktop/archive/grmpy/for_corplot_DTI_12_7.csv')->M2
+rownames(M)<-colnames(M)
+rownames(M2)<-paste(colnames(M2))
+color <- colorRampPalette(c("#0060C6", "gray", "#478311")) (100)
+corrplot(as.matrix(M),is.corr=FALSE,method = "number",diag = FALSE, col = color,tl.col = "black",addgrid.col = "black",tl.cex = 4, cl.cex=2, cl.length = 9, cl.lim = c(-1,1), number.cex = 2.1, type = "upper")
+# Going with 3700x3700 resolution
+#corrRect(c(4,3,3), col = "black", lwd=5)
+
+corrplot(as.matrix(M2),is.corr=FALSE,method = "number",diag = TRUE, col = color,tl.col = "black",addgrid.col = "black",tl.cex = 3.5, cl.cex=2.5, cl.length = 9, cl.lim = c(-1,1), number.cex = 4)
+```
+
+
+
+
+
+```{r}
+# DCN revisions, started 11/11
+dim(df)
+
+#remake mean white matter as polynomial fits
+
+# Primary lms for comparison
+ssfa_lm<-lm(ssFA~visitagemonths+sex+meanRELrms+I(visitagemonths^2)+I(visitagemonths^3),data=df)
+icvf_lm<-lm(ICVF~visitagemonths+sex+meanRELrms+I(visitagemonths^2)+I(visitagemonths^3),data=df)
+isovf_lm<-lm(ISOVF~visitagemonths+sex+meanRELrms+I(visitagemonths^2)+I(visitagemonths^3),data=df)
+odi_lm<-lm(ODI~visitagemonths+sex+meanRELrms+I(visitagemonths^2)+I(visitagemonths^3),data=df)
+rtop_lm<-lm(rtop~visitagemonths+sex+meanRELrms + I(visitagemonths^2) + I(visitagemonths^3), data=df)
+ssmd_lm<-lm(ssMD~visitagemonths+sex+meanRELrms + I(visitagemonths^2) + I(visitagemonths^3), data=df)
+ssrd_lm<-lm(ssRD~visitagemonths+sex+meanRELrms + I(visitagemonths^2) + I(visitagemonths^3), data=df)
+ssad_lm<-lm(ssAD~visitagemonths+sex+meanRELrms + I(visitagemonths^2) + I(visitagemonths^3), data=df)
+rtpp_lm<-lm(rtpp~visitagemonths+sex+meanRELrms + I(visitagemonths^2) + I(visitagemonths^3), data=df)
+rtap_lm<-lm(rtap~visitagemonths+sex+meanRELrms + I(visitagemonths^2) + I(visitagemonths^3), data=df)
+msmd_lm<-lm(msMD~visitagemonths+sex+meanRELrms + I(visitagemonths^2) + I(visitagemonths^3), data=df)
+msfa_lm<-lm(msFA~visitagemonths+sex+meanRELrms + I(visitagemonths^2) + I(visitagemonths^3), data=df)
+msad_lm<-lm(msAD~visitagemonths+sex+meanRELrms + I(visitagemonths^2) + I(visitagemonths^3), data=df)
+msrd_lm<-lm(msRD~visitagemonths+sex+meanRELrms + I(visitagemonths^2) + I(visitagemonths^3), data=df)
+
+# make lms w/o age term for subtraction of r^2s
+ssfa_lm_wo<-lm(ssFA~sex+meanRELrms,data=df)
+icvf_lm_wo<-lm(ICVF~sex+meanRELrms,data=df)
+isovf_lm_wo<-lm(ISOVF~sex+meanRELrms,data=df)
+odi_lm_wo<-lm(ODI~sex+meanRELrms,data=df)
+rtop_lm_wo<-lm(rtop~sex+meanRELrms, data=df)
+ssmd_lm_wo<-lm(ssMD~sex+meanRELrms, data=df)
+ssrd_lm_wo<-lm(ssRD~sex+meanRELrms, data=df)
+ssad_lm_wo<-lm(ssAD~sex+meanRELrms, data=df)
+rtpp_lm_wo<-lm(rtpp~sex+meanRELrms, data=df)
+rtap_lm_wo<-lm(rtap~sex+meanRELrms, data=df)
+msmd_lm_wo<-lm(msMD~sex+meanRELrms, data=df)
+msfa_lm_wo<-lm(msFA~sex+meanRELrms, data=df)
+msad_lm_wo<-lm(msAD~sex+meanRELrms, data=df)
+msrd_lm_wo<-lm(msRD~sex+meanRELrms, data=df)
+
+# get difference
+ssfa_dif<-summary(ssfa_lm)$r.squared-summary(ssfa_lm_wo)$r.squared
+ssmd_dif<-summary(ssmd_lm)$r.squared-summary(ssmd_lm_wo)$r.squared
+ssad_dif<-summary(ssad_lm)$r.squared-summary(ssad_lm_wo)$r.squared
+ssrd_dif<-summary(ssrd_lm)$r.squared-summary(ssrd_lm_wo)$r.squared
+msfa_dif<-summary(msfa_lm)$r.squared-summary(msfa_lm_wo)$r.squared
+msmd_dif<-summary(msmd_lm)$r.squared-summary(msmd_lm_wo)$r.squared
+msad_dif<-summary(msad_lm)$r.squared-summary(msad_lm_wo)$r.squared
+msrd_dif<-summary(msrd_lm)$r.squared-summary(msrd_lm_wo)$r.squared
+icvf_dif<-summary(icvf_lm)$r.squared-summary(icvf_lm_wo)$r.squared
+isovf_dif<-summary(isovf_lm)$r.squared-summary(isovf_lm_wo)$r.squared
+odi_dif<-summary(odi_lm)$r.squared-summary(odi_lm_wo)$r.squared
+rtop_dif<-summary(rtop_lm)$r.squared-summary(rtop_lm_wo)$r.squared
+rtap_dif<-summary(rtap_lm)$r.squared-summary(rtap_lm_wo)$r.squared
+rtpp_dif<-summary(rtpp_lm)$r.squared-summary(rtpp_lm_wo)$r.squared
+
+# plot difference
+pvec$dif<-as.numeric(c(ssfa_dif,ssmd_dif,ssad_dif,ssrd_dif,msfa_dif,msmd_dif,msad_dif,msrd_dif,icvf_dif,odi_dif,isovf_dif,rtop_dif,rtap_dif,rtpp_dif))
+pvec$metric2<-factor(pvec$metric, c(pvec$metric[order(pvec$dif, decreasing = TRUE)]))
+ggplot(pvec, aes(x=metric2, y=dif, fill=fam)) + geom_bar(stat="identity") + scale_fill_manual("Processing Method", values = c("msDTI" = "#4b5e72", "ssDTI" = "#7b98b7", "NODDI" = "#AEBD38", "MAPL" = "#598234"), breaks = c("ssDTI","msDTI","NODDI","MAPL")) + labs(x ="Diffusion Metric", y=expression(paste(Delta, r^2))) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), axis.text.x = element_text(face="bold",size=25, angle = 50, hjust=1), axis.text.y = element_text(face="bold",size=25), axis.title = element_text(size=33), axis.line= element_line(colour = 'black', size = 1.5), legend.position = c(.77,.8), legend.text = element_text(size=20), legend.title = element_text(size = 24), plot.title = element_text(face="bold",size = 33)) + ggtitle("Maturation Across White Matter") +scale_y_continuous(breaks=c(0,0.075,0.15,0.225)) +
+  theme(plot.title = element_text(hjust = 0.5))
+
+summary(ssfa_lm)
+summary(ssmd_lm)
+summary(ssad_lm)
+summary(ssrd_lm)
+summary(msfa_lm)
+summary(msmd_lm)
+summary(msad_lm)
+summary(msrd_lm)
+summary(icvf_lm)
+summary(isovf_lm)
+summary(odi_lm)
+summary(rtop_lm)
+summary(rtap_lm)
+summary(rtpp_lm)
+```
+
+```{r}
+# to compare AICs for each model quadr. vs cubic
+# Primary lms for comparison
+ssfa_lm<-lm(ssFA~visitagemonths+sex+meanRELrms+I(visitagemonths^2)+I(visitagemonths^3),data=df)
+icvf_lm<-lm(ICVF~visitagemonths+sex+meanRELrms+I(visitagemonths^2)+I(visitagemonths^3),data=df)
+isovf_lm<-lm(ISOVF~visitagemonths+sex+meanRELrms+I(visitagemonths^2)+I(visitagemonths^3),data=df)
+odi_lm<-lm(ODI~visitagemonths+sex+meanRELrms+I(visitagemonths^2)+I(visitagemonths^3),data=df)
+rtop_lm<-lm(rtop~visitagemonths+sex+meanRELrms + I(visitagemonths^2) + I(visitagemonths^3), data=df)
+ssmd_lm<-lm(ssMD~visitagemonths+sex+meanRELrms + I(visitagemonths^2) + I(visitagemonths^3), data=df)
+ssrd_lm<-lm(ssRD~visitagemonths+sex+meanRELrms + I(visitagemonths^2) + I(visitagemonths^3), data=df)
+ssad_lm<-lm(ssAD~visitagemonths+sex+meanRELrms + I(visitagemonths^2) + I(visitagemonths^3), data=df)
+rtpp_lm<-lm(rtpp~visitagemonths+sex+meanRELrms + I(visitagemonths^2) + I(visitagemonths^3), data=df)
+rtap_lm<-lm(rtap~visitagemonths+sex+meanRELrms + I(visitagemonths^2) + I(visitagemonths^3), data=df)
+msmd_lm<-lm(msMD~visitagemonths+sex+meanRELrms + I(visitagemonths^2) + I(visitagemonths^3), data=df)
+msfa_lm<-lm(msFA~visitagemonths+sex+meanRELrms + I(visitagemonths^2) + I(visitagemonths^3), data=df)
+msad_lm<-lm(msAD~visitagemonths+sex+meanRELrms + I(visitagemonths^2) + I(visitagemonths^3), data=df)
+msrd_lm<-lm(msRD~visitagemonths+sex+meanRELrms + I(visitagemonths^2) + I(visitagemonths^3), data=df)
+
+
+# Secondary lms without cubic term comparison
+ssfa_lm2<-lm(ssFA~visitagemonths+sex+meanRELrms+I(visitagemonths^2),data=df)
+icvf_lm2<-lm(ICVF~visitagemonths+sex+meanRELrms+I(visitagemonths^2),data=df)
+isovf_lm2<-lm(ISOVF~visitagemonths+sex+meanRELrms+I(visitagemonths^2),data=df)
+odi_lm2<-lm(ODI~visitagemonths+sex+meanRELrms+I(visitagemonths^2),data=df)
+rtop_lm2<-lm(rtop~visitagemonths+sex+meanRELrms + I(visitagemonths^2), data=df)
+ssmd_lm2<-lm(ssMD~visitagemonths+sex+meanRELrms + I(visitagemonths^2), data=df)
+ssrd_lm2<-lm(ssRD~visitagemonths+sex+meanRELrms + I(visitagemonths^2), data=df)
+ssad_lm2<-lm(ssAD~visitagemonths+sex+meanRELrms + I(visitagemonths^2), data=df)
+rtpp_lm2<-lm(rtpp~visitagemonths+sex+meanRELrms + I(visitagemonths^2), data=df)
+rtap_lm2<-lm(rtap~visitagemonths+sex+meanRELrms + I(visitagemonths^2), data=df)
+msmd_lm2<-lm(msMD~visitagemonths+sex+meanRELrms + I(visitagemonths^2), data=df)
+msfa_lm2<-lm(msFA~visitagemonths+sex+meanRELrms + I(visitagemonths^2), data=df)
+msad_lm2<-lm(msAD~visitagemonths+sex+meanRELrms + I(visitagemonths^2), data=df)
+msrd_lm2<-lm(msRD~visitagemonths+sex+meanRELrms + I(visitagemonths^2), data=df)
+
+#difference
+(AIC(ssfa_lm))-(AIC(ssfa_lm2))
+(AIC(msfa_lm))-(AIC(msfa_lm2))
+(AIC(ssmd_lm))-(AIC(ssmd_lm2))
+(AIC(msmd_lm))-(AIC(msmd_lm2))
+(AIC(ssad_lm))-(AIC(ssad_lm2))
+(AIC(msad_lm))-(AIC(msad_lm2))
+(AIC(ssrd_lm))-(AIC(ssrd_lm2))
+(AIC(msrd_lm))-(AIC(msrd_lm2))
+(AIC(icvf_lm))-(AIC(icvf_lm2))
+(AIC(odi_lm))-(AIC(odi_lm2))
+(AIC(isovf_lm))-(AIC(isovf_lm2))
+(AIC(rtop_lm))-(AIC(rtop_lm2))
+(AIC(rtap_lm))-(AIC(rtap_lm2))
+(AIC(rtpp_lm))-(AIC(rtpp_lm2))
+
+# 12 out of 14 AICs are lower for cubic model, going with that
+```
+
+
+```{r}
+# plot polynomial fits for supplement
+# get residuals
+df$ssfa_resid<-ssfa_lm_wo$residuals+mean(df$ssFA)
+df$msfa_resid<-msfa_lm_wo$residuals+mean(df$msFA)
+df$ssad_resid<-ssad_lm_wo$residuals+mean(df$ssAD)
+df$msad_resid<-msad_lm_wo$residuals+mean(df$msAD)
+df$ssmd_resid<-ssmd_lm_wo$residuals+mean(df$ssMD)
+df$msmd_resid<-msmd_lm_wo$residuals+mean(df$msMD)
+df$ssrd_resid<-ssrd_lm_wo$residuals+mean(df$ssRD)
+df$msrd_resid<-msrd_lm_wo$residuals+mean(df$msRD)
+df$icvf_resid<-icvf_lm_wo$residuals+mean(df$ICVF)
+df$odi_resid<-odi_lm_wo$residuals+mean(df$ODI)
+df$isovf_resid<-isovf_lm_wo$residuals+mean(df$ISOVF)
+df$rtop_resid<-rtop_lm_wo$residuals+mean(df$rtop)
+df$rtpp_resid<-rtpp_lm_wo$residuals+mean(df$rtpp)
+df$rtap_resid<-rtap_lm_wo$residuals+mean(df$rtap)
+
+
+#FA_ssxAGE
+ggplot(df,aes(x=(visitagemonths)/12,y=ssfa_resid)) + geom_smooth(method = 'lm', formula = y~poly(x,3, raw=T), colour=('#4b5e72'), fill = "#7b98b7", alpha = .8) + geom_point() + xlab("Age") +ylab("Average ssFA") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=30), axis.title = element_text(size=30, face="bold"), axis.title.y = element_text(margin = margin(t = 0, r = 47, b = 0, l = 0)))
+
+#FA_msxAGE
+ggplot(df,aes(x=(visitagemonths)/12,y=msfa_resid)) + geom_smooth(method = 'lm', formula = y~poly(x,3, raw=T), colour=('black'), fill = "#4b5e72", alpha = .8) + geom_point() + xlab("Age") + scale_y_continuous(breaks = seq(.44, .5,by=.03)) +ylab("Average msFA") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=30), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r = 39, b = 0, l = 0)))
+
+#AD_ssxAGE
+ggplot(df,aes(x=(visitagemonths)/12,y=ssad_resid))+ scale_y_continuous(labels = scientific) + geom_smooth(method = 'lm', formula = y~poly(x,3, raw=T), colour=('#4b5e72'), fill = "#7b98b7", alpha = .8) + geom_point() + xlab("Age") +ylab("Average ssAD") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=27), axis.title = element_text(size=30, face="bold"), axis.title.y = element_text(margin = margin(t = 0, r = 15, b = 0, l = 0)))
+
+#AD_msxAGE
+ggplot(df,aes(x=(visitagemonths)/12,y=msad_resid))+ scale_y_continuous(labels = scientific) + geom_smooth(method = 'lm', formula = y~poly(x,3, raw=T), colour=('black'), fill = "#4b5e72", alpha = .8) + geom_point() + xlab("Age") +ylab("Average msAD") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text.y = element_text(face="bold",size=24), axis.text.x = element_text(face="bold",size=30), axis.title = element_text(size=30, face="bold"), axis.title.y = element_text(margin = margin(t = 0, r = 11, b = 0, l = 0)))
+
+#RD_ssxAGE
+ggplot(df,aes(x=(visitagemonths)/12,y=ssrd_resid))+ scale_y_continuous(labels = scientific) + geom_smooth(method = 'lm', formula = y~poly(x,3, raw=T), colour=('#4b5e72'), fill = "#7b98b7", alpha = .8) + geom_point() + xlab("Age") +ylab("Average ssRD") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=28), axis.title = element_text(size=30, face="bold"), axis.title.y = element_text(margin = margin(t = 0, r = 17, b = 0, l = 0)))
+
+#RD_msxAGE
+ggplot(df,aes(x=(visitagemonths)/12,y=msrd_resid))+ scale_y_continuous(labels = scientific) + geom_smooth(method = 'lm', formula = y~poly(x,3, raw=T), colour=('black'), fill = "#4b5e72", alpha = .8) + geom_point() + xlab("Age") +ylab("Average msRD") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=27), axis.title = element_text(size=30, face="bold"), axis.title.y = element_text(margin = margin(t = 0, r = 27, b = 0, l = 0)))
+
+#MD_ssxAGE
+ggplot(df,aes(x=(visitagemonths)/12,y=ssmd_resid)) + scale_y_continuous(labels = scientific) + geom_smooth(method = 'lm', formula = y~poly(x,3, raw=T), colour=('#4b5e72'), fill = "#7b98b7", alpha = .8) + geom_point() + xlab("Age") +ylab("Average ssMD") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=26), axis.title = element_text(size=30, face="bold"), axis.title.y = element_text(margin = margin(t = 0, r = 11, b = 0, l = 0)))
+
+#MD_msxAGE
+ggplot(df,aes(x=(visitagemonths)/12,y=msmd_resid)) + scale_y_continuous(labels = scientific, breaks = seq(6.6e-4, 7.2e-4,by=.3e-4)) + geom_smooth(method = 'lm', formula = y~poly(x,3, raw=T), colour=('black'), fill = "#4b5e72", alpha = .8) + geom_point() + xlab("Age") +ylab("Average msMD") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text.x = element_text(face="bold",size=30), axis.text.y = element_text(face="bold",size=30), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r = 11, b = 0, l = 0)))
+
+
+#ICVFxAGE
+ggplot(df,aes(x=(visitagemonths)/12,y=icvf_resid)) + scale_y_continuous(breaks = seq(.5, .6, by=.05)) + geom_smooth(method = 'lm', formula = y~poly(x,3, raw=T), colour=('#8a962e'), fill = "#cee045", alpha = .8) + geom_point() + xlab("Age") +ylab("Average ICVF") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=30), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r = 39, b = 0, l = 0)))
+
+
+#ODIxAGE
+ggplot(df,aes(x=(visitagemonths)/12,y=odi_resid)) + geom_smooth(method = 'lm', formula = y~poly(x,3, raw=T), colour=('#8a962e'), fill = "#cee045", alpha = .8) + geom_point() + xlab("Age") + scale_y_continuous(breaks = seq(.22, .26,by=.02)) +ylab("Average ODI") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=30), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r = 39, b = 0, l = 0)))
+
+#ISOVFxAGE
+ggplot(df,aes(x=(visitagemonths)/12,y=isovf_resid)) + geom_smooth(method = 'lm', formula = y~poly(x,3, raw=T), colour=('#8a962e'), fill = "#cee045", alpha = .8) + geom_point() + xlab("Age") +ylab("Average ISOVF") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=27), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r = 35, b = 0, l = 0)))
+
+
+#RTOPxAGE
+ggplot(df,aes(x=(visitagemonths)/12,y=rtop_resid)) + scale_y_continuous(labels = scientific, breaks = seq(3.0e5, 5.5e5,by=1.2e5)) + geom_smooth(method = 'lm', formula = y~poly(x,3, raw=T), colour=('#324c1d'), fill = "#64933b", alpha = .8) + geom_point() + xlab("Age (years)") +ylab("Average RTOP") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text.y = element_text(face="bold",size=27), axis.text.x = element_text(face="bold",size=30), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r = 7, b = 0, l = 0)))
+
+#RTpPxAGE
+ggplot(df,aes(x=(visitagemonths)/12,y=rtpp_resid)) + scale_y_continuous(breaks = seq(49, 54,by=2)) + geom_smooth(method = 'lm', formula = y~poly(x,3, raw=T), colour=('#324c1d'), fill = "#64933b", alpha = .8) + geom_point() + xlab("Age") +ylab("Average RTPP") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=30), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r =55, b = 0, l = 0)))
+
+#RTaPxAGE
+ggplot(df,aes(x=(visitagemonths)/12,y=rtap_resid)) + geom_smooth(method = 'lm', formula = y~poly(x,3, raw=T), colour=('#324c1d'), fill = "#64933b", alpha = .8) + geom_point() + xlab("Age (years)") +ylab("Average RTAP") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=27), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r =35, b = 0, l = 0)))
+
+```
+
+```{r}
+# gams with k=3
+#FA_ssxAGE 
+ggplot(df,aes(x=(visitagemonths)/12,y=ssfa_resid)) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('#4b5e72'), fill = "#7b98b7", alpha = .8) + geom_point() + xlab("Age") +ylab("Average ssFA") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=30), axis.title = element_text(size=30, face="bold"), axis.title.y = element_text(margin = margin(t = 0, r = 47, b = 0, l = 0))) 
+
+#FA_msxAGE 
+ggplot(df,aes(x=(visitagemonths)/12,y=msfa_resid)) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('black'), fill = "#4b5e72", alpha = .8) + geom_point() + xlab("Age") + scale_y_continuous(breaks = seq(.44, .5,by=.03)) +ylab("Average msFA") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=30), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r = 39, b = 0, l = 0))) 
+
+#AD_ssxAGE 
+ggplot(df,aes(x=(visitagemonths)/12,y=ssad_resid))+ scale_y_continuous(labels = scientific) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('#4b5e72'), fill = "#7b98b7", alpha = .8) + geom_point() + xlab("Age") +ylab("Average ssAD") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=27), axis.title = element_text(size=30, face="bold"), axis.title.y = element_text(margin = margin(t = 0, r = 15, b = 0, l = 0))) 
+
+#AD_msxAGE 
+ggplot(df,aes(x=(visitagemonths)/12,y=msad_resid))+ scale_y_continuous(labels = scientific) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('black'), fill = "#4b5e72", alpha = .8) + geom_point() + xlab("Age") +ylab("Average msAD") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text.y = element_text(face="bold",size=24), axis.text.x = element_text(face="bold",size=30), axis.title = element_text(size=30, face="bold"), axis.title.y = element_text(margin = margin(t = 0, r = 11, b = 0, l = 0))) 
+
+#RD_ssxAGE 
+ggplot(df,aes(x=(visitagemonths)/12,y=ssrd_resid))+ scale_y_continuous(labels = scientific) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('#4b5e72'), fill = "#7b98b7", alpha = .8) + geom_point() + xlab("Age") +ylab("Average ssRD") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=28), axis.title = element_text(size=30, face="bold"), axis.title.y = element_text(margin = margin(t = 0, r = 17, b = 0, l = 0))) 
+
+#RD_msxAGE 
+ggplot(df,aes(x=(visitagemonths)/12,y=msrd_resid))+ scale_y_continuous(labels = scientific) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('black'), fill = "#4b5e72", alpha = .8) + geom_point() + xlab("Age") +ylab("Average msRD") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=27), axis.title = element_text(size=30, face="bold"), axis.title.y = element_text(margin = margin(t = 0, r = 27, b = 0, l = 0))) 
+
+#MD_ssxAGE 
+ggplot(df,aes(x=(visitagemonths)/12,y=ssmd_resid)) + scale_y_continuous(labels = scientific) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('#4b5e72'), fill = "#7b98b7", alpha = .8) + geom_point() + xlab("Age") +ylab("Average ssMD") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=26), axis.title = element_text(size=30, face="bold"), axis.title.y = element_text(margin = margin(t = 0, r = 11, b = 0, l = 0))) 
+
+#MD_msxAGE 
+ggplot(df,aes(x=(visitagemonths)/12,y=msmd_resid)) + scale_y_continuous(labels = scientific, breaks = seq(6.6e-4, 7.2e-4,by=.3e-4)) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('black'), fill = "#4b5e72", alpha = .8) + geom_point() + xlab("Age") +ylab("Average msMD") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text.x = element_text(face="bold",size=30), axis.text.y = element_text(face="bold",size=30), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r = 11, b = 0, l = 0))) 
+
+
+#ICVFxAGE 
+ggplot(df,aes(x=(visitagemonths)/12,y=icvf_resid)) + scale_y_continuous(breaks = seq(.5, .6, by=.05)) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('#8a962e'), fill = "#cee045", alpha = .8) + geom_point() + xlab("Age") +ylab("Average ICVF") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=30), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r = 39, b = 0, l = 0))) 
+
+
+#ODIxAGE 
+ggplot(df,aes(x=(visitagemonths)/12,y=odi_resid)) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('#8a962e'), fill = "#cee045", alpha = .8) + geom_point() + xlab("Age") + scale_y_continuous(breaks = seq(.22, .26,by=.02)) +ylab("Average ODI") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=30), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r = 39, b = 0, l = 0))) 
+
+#ISOVFxAGE 
+ggplot(df,aes(x=(visitagemonths)/12,y=isovf_resid)) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('#8a962e'), fill = "#cee045", alpha = .8) + geom_point() + xlab("Age") +ylab("Average ISOVF") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=27), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r = 35, b = 0, l = 0))) 
+
+
+#RTOPxAGE 
+ggplot(df,aes(x=(visitagemonths)/12,y=rtop_resid)) + scale_y_continuous(labels = scientific, breaks = seq(3.0e5, 5.5e5,by=1.2e5)) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('#324c1d'), fill = "#64933b", alpha = .8) + geom_point() + xlab("Age (years)") +ylab("Average RTOP") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text.y = element_text(face="bold",size=27), axis.text.x = element_text(face="bold",size=30), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r = 7, b = 0, l = 0))) 
+
+#RTpPxAGE 
+ggplot(df,aes(x=(visitagemonths)/12,y=rtpp_resid)) + scale_y_continuous(breaks = seq(49, 54,by=2)) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('#324c1d'), fill = "#64933b", alpha = .8) + geom_point() + xlab("Age") +ylab("Average RTPP") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=30), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r =55, b = 0, l = 0)))
+
+#RTaPxAGE 
+ggplot(df,aes(x=(visitagemonths)/12,y=rtap_resid)) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('#324c1d'), fill = "#64933b", alpha = .8) + geom_point() + xlab("Age (years)") +ylab("Average RTAP") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=27), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r =35, b = 0, l = 0))) 
+
+```
+
+
+```{r}
+# deriv plotting
+# each plot included; all others are commented out iteratively so that desired plot becomes the only "p1"
+font_size=20
+
+library(gratia)
+library(dplyr)
+library(svglite)
+library(cowplot)
+
+get_derivs_and_plot <- function(modobj,smooth_var,low_color=NULL,hi_color=NULL){
+  this_font_size = font_size*1.25
+  if (is.null(low_color)){low_color = "white"}
+  if (is.null(hi_color)){hi_color = "#324c1d"}
+  derv<-derivatives(modobj,term=smooth_var)
+  derv<- derv %>%
+    mutate(sig = !(0 >lower & 0 < upper))
+  derv$sig_deriv = derv$derivative*derv$sig
+  cat(sprintf("\nSig change: %1.2f - %1.2f\n",min(derv$data[derv$sig==T]),max(derv$data[derv$sig==T])))
+  d1<- ggplot(data=derv) + geom_tile(aes(x = data, y = .5, fill = sig_deriv))
+  
+
+  # will have to change this for negatively-sloped age-effects (swap low and high), color corresponds to metric family used
+   d1 <- d1 + scale_fill_gradient(low = low_color, high = hi_color,limits = c(0,max(derv$derivative)))
+#    d1 <- d1 + scale_fill_gradient2(low = "#324c1d", midpoint = 0, mid = "white", high = "white",limits = c(min(derv$derivative),max(derv$derivative)))
+  
+  d1 <- d1 + 
+    labs(x = smooth_var,fill = sprintf("Change Per Year")) + 
+    theme(axis.title.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.text.x = element_text(size = this_font_size),
+          axis.line = element_blank(),
+          axis.ticks.y = element_blank(),
+          text = element_text(size=this_font_size),
+          legend.text = element_text(size = this_font_size),
+          axis.title = element_text(size = this_font_size),
+          legend.key.width = unit(1,"cm"),
+          legend.position = "right",
+          plot.margin = unit(c(0, 0, 0, 0), "cm"))+
+    guides(fill = guide_colorbar(ticks=T, ticks.linewidth = 2, ticks.colour = "black", reverse = F,direction = "vertical",title.position = "top")) +
+    geom_rect(aes(ymin=0,ymax=1,xmin=min(data),xmax=max(data)),color="black",fill="white",alpha = 0)
+  return(d1)
+}
+
+# add visitagemonths / 12 variable for direct calling
+df$visitageyears<-df$visitagemonths/12
+
+# remake gams with visitageyears
+ssfa_gam<-gam(ssFA~s(visitageyears,k=3)+sex+meanRELrms,data=df)
+icvf_gam<-gam(ICVF~s(visitageyears,k=3)+sex+meanRELrms,data=df)
+isovf_gam<-gam(ISOVF~s(visitageyears,k=3)+sex+meanRELrms,data=df)
+rtop_gam<-gam(rtop~s(visitageyears,k=3)+sex+meanRELrms,data=df)
+ssmd_gam<-gam(ssMD~s(visitageyears,k=3)+sex+meanRELrms,data=df)
+ssrd_gam<-gam(ssRD~s(visitageyears,k=3)+sex+meanRELrms,data=df)
+ssad_gam<-gam(ssAD~s(visitageyears,k=3)+sex+meanRELrms,data=df)
+odi_gam<-gam(ODI~s(visitageyears,k=3)+sex+meanRELrms,data=df)
+rtop_gam<-gam(rtop~s(visitageyears,k=4)+sex+meanRELrms,data=df)
+rtpp_gam<-gam(rtpp~s(visitageyears,k=3)+sex+meanRELrms,data=df)
+rtap_gam<-gam(rtap~s(visitageyears,k=3)+sex+meanRELrms,data=df)
+msmd_gam<-gam(msMD~s(visitageyears,k=3)+sex+meanRELrms,data=df)
+msfa_gam<-gam(msFA~s(visitageyears,k=3)+sex+meanRELrms,data=df)
+msad_gam<-gam(msAD~s(visitageyears,k=3)+sex+meanRELrms,data=df)
+msrd_gam<-gam(msRD~s(visitageyears,k=3)+sex+meanRELrms,data=df)
+
+
+#FA_ssxAGE 
+#p1<-ggplot(df,aes(x=(visitagemonths)/12,y=ssfa_resid)) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('#4b5e72'), fill = "#7b98b7", alpha = .8) + geom_point(size=3) + xlab("Age") +ylab("Average ssFA") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=30), axis.title = element_text(size=30, face="bold"), axis.title.y = element_text(margin = margin(t = 0, r = 47, b = 0, l = 0))) 
+
+#FA_msxAGE 
+#p1<-ggplot(df,aes(x=(visitagemonths)/12,y=msfa_resid)) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('black'), fill = "#4b5e72", alpha = .8) + geom_point(size=3) + xlab("Age") + scale_y_continuous(breaks = seq(.44, .5,by=.03)) +ylab("Average msFA") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=30), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r = 39, b = 0, l = 0))) 
+
+#AD_ssxAGE 
+#p1<-ggplot(df,aes(x=(visitagemonths)/12,y=ssad_resid))+ scale_y_continuous(labels = scientific) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('#4b5e72'), fill = "#7b98b7", alpha = .8) + geom_point(size=3) + xlab("Age") +ylab("Average ssAD") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=27), axis.title = element_text(size=30, face="bold"), axis.title.y = element_text(margin = margin(t = 0, r = 15, b = 0, l = 0))) 
+
+#AD_msxAGE 
+#p1<-ggplot(df,aes(x=(visitagemonths)/12,y=msad_resid))+ scale_y_continuous(labels = scientific) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('black'), fill = "#4b5e72", alpha = .8) + geom_point(size=3) + xlab("Age") +ylab("Average msAD") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text.y = element_text(face="bold",size=24), axis.text.x = element_text(face="bold",size=30), axis.title = element_text(size=30, face="bold"), axis.title.y = element_text(margin = margin(t = 0, r = 11, b = 0, l = 0))) 
+
+#RD_ssxAGE 
+#p1<-ggplot(df,aes(x=(visitagemonths)/12,y=ssrd_resid))+ scale_y_continuous(labels = scientific) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('#4b5e72'), fill = "#7b98b7", alpha = .8) + geom_point(size=3) + xlab("Age") +ylab("5.7e-4") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=28), axis.title = element_text(size=30), axis.title.y = element_text(margin = margin(t = 0, r = 17, b = 0, l = 0))) 
+
+#RD_msxAGE 
+#p1<-ggplot(df,aes(x=(visitagemonths)/12,y=msrd_resid))+ scale_y_continuous(labels = scientific) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('black'), fill = "#4b5e72", alpha = .8) + geom_point(size=3) + xlab("Age") +ylab("Average msRD") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=27), axis.title = element_text(size=30, face="bold"), axis.title.y = element_text(margin = margin(t = 0, r = 27, b = 0, l = 0))) 
+
+#MD_ssxAGE 
+#p1<-ggplot(df,aes(x=(visitagemonths)/12,y=ssmd_resid)) + scale_y_continuous(labels = scientific) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('#4b5e72'), fill = "#7b98b7", alpha = .8) + geom_point(size=3) + xlab("Age") +ylab("Average ssMD") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=26), axis.title = element_text(size=30, face="bold"), axis.title.y = element_text(margin = margin(t = 0, r = 11, b = 0, l = 0))) 
+
+#MD_msxAGE 
+#p1<-ggplot(df,aes(x=(visitagemonths)/12,y=msmd_resid)) + scale_y_continuous(labels = scientific, breaks = seq(6.6e-4, 7.2e-4,by=.3e-4)) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('black'), fill = "#4b5e72", alpha = .8) + geom_point(size=3) + xlab("Age") +ylab("Average msMD") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text.x = element_text(face="bold",size=30), axis.text.y = element_text(face="bold",size=30), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r = 11, b = 0, l = 0))) 
+
+
+#ICVFxAGE 
+#p1<-ggplot(df,aes(x=(visitagemonths)/12,y=icvf_resid)) + scale_y_continuous(breaks = seq(.5, .6, by=.05)) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('#8a962e'), fill = "#cee045", alpha = .8) + geom_point(size=3) + xlab("Age") +ylab("Average ICVF") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=30), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r = 39, b = 0, l = 0))) 
+
+
+#ODIxAGE 
+#p1<-ggplot(df,aes(x=(visitagemonths)/12,y=odi_resid)) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('#8a962e'), fill = "#cee045", alpha = .8) + geom_point(size=3) + xlab("Age") + scale_y_continuous(breaks = seq(.22, .26,by=.02)) +ylab("Average ODI") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=30), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r = 39, b = 0, l = 0))) 
+
+#ISOVFxAGE 
+#p1<-ggplot(df,aes(x=(visitagemonths)/12,y=isovf_resid)) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('#8a962e'), fill = "#cee045", alpha = .8) + geom_point(size=3) + xlab("Age") +ylab("Average ISOVF") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=27), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r = 35, b = 0, l = 0))) 
+
+
+#RTOPxAGE 
+#p1<-ggplot(df,aes(x=(visitagemonths)/12,y=rtop_resid)) + scale_y_continuous(labels = scientific, breaks = seq(3.0e5, 5.5e5,by=1.2e5)) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('#324c1d'), fill = "#64933b", alpha = .8) + geom_point(size=3) + xlab("Age (years)") +ylab("Average RTOP") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text.y = element_text(face="bold",size=27), axis.text.x = element_text(face="bold",size=30), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r = 7, b = 0, l = 0))) 
+
+#RTaPxAGE 
+#p1<-ggplot(df,aes(x=(visitagemonths)/12,y=rtap_resid))+ scale_y_continuous(labels=scientific) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('#324c1d'), fill = "#64933b", alpha = .8) + geom_point(size=3) + xlab("Age (years)") +ylab("Average RTAP") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=27), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r =35, b = 0, l = 0))) 
+
+#RTpPxAGE 
+p1<-ggplot(df,aes(x=(visitagemonths)/12,y=rtpp_resid)) + scale_y_continuous(breaks = seq(49, 54,by=2)) + geom_smooth(method = 'gam', formula = y~s(x,k=3), colour=('#324c1d'), fill = "#64933b", alpha = .8) + geom_point(size=3) + xlab("Age") +ylab("Average RTPP") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=30), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r =55, b = 0, l = 0)))
+
+p1<- p1+theme(text = element_text(size=this_font_size),
+              axis.text = element_text(size = this_font_size),
+              axis.title.y = element_text(size = this_font_size),
+              axis.title.x = element_blank(),
+              axis.text.x = element_blank(),
+              axis.ticks.x = element_blank(),
+              legend.text = element_text(size = this_font_size),
+              legend.title = element_text(size = this_font_size),
+              axis.title = element_text(size = this_font_size),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.background = element_rect(fill = "transparent",colour = NA),
+              plot.background = element_rect(fill = "transparent",colour = NA),
+              plot.margin = unit(c(.2, .2, 0, .2), "cm")) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=30), axis.title = element_text(face="bold",size=30), axis.title.y = element_text(margin = margin(t = 0, r = 39, b = 0, l = 0),size = 30))  #Top, left,Bottom, right
+
+# derivative calculation and plot object
+d1 <- get_derivs_and_plot(modobj = rtpp_gam,smooth_var = "visitageyears") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank()) + theme(axis.line.x = element_line(colour = 'black', size = 2), axis.line.y = element_line(colour = 'black', size = 2), axis.ticks.length = unit(.25, "cm"), axis.text = element_text(face="bold",size=30), axis.title = element_text(face="bold",size=30)) + guides(fill = guide_colorbar(draw.ulim = F, frame.colour = "black", frame.linetype=1, frame.linewidth = 3 , ticks=T, ticks.linewidth = 2,  ticks.colour = "black", reverse = F,direction = "vertical",title.position = "top"))  +
+  theme(plot.margin=unit(c(0,0,0,0),"cm")) #Top, left,Bottom, right
+# stick plots together
+scatter <- list(p1)
+bar <- list(d1)
+allplots <- c(scatter,bar)
+pg<-plot_grid(rel_heights = c(16,3),plotlist = allplots,align = "v",axis = "lr",ncol = 1)
+final_plot <- pg
+
+# save
+ggsave(plot = final_plot,filename = "~/derivplots/derivative_rtpp.png",device = "png",width = 320,height = 210,units = "mm")
+# Print the saved plot to the rmarkdown document (optional)
+knitr::include_graphics("~/derivplots/derivative_rtpp.png")
+
+
+
+```
+
+```{r}
+#JHU tracts - DCN revisions
+# make models for age not included for r^2 extraction
+
+covariates=" ~sex+meanRELrms"   
+
+#FAss
+fassrois <- mclapply(colnames(FAss)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+fassrois_pvals <- mclapply(fassrois, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#FAms
+famsrois <- mclapply(colnames(FAms)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+famsrois_pvals <- mclapply(famsrois, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#MDss
+mdssrois <- mclapply(colnames(MDss)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+mdssrois_pvals <- mclapply(mdssrois, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#MDms
+mdmsrois <- mclapply(colnames(MDms)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+mdmsrois_pvals <- mclapply(mdmsrois, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#ADss
+adssrois <- mclapply(colnames(ADss)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+adssrois_pvals <- mclapply(adssrois, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#ADms
+admsrois <- mclapply(colnames(ADms)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+admsrois_pvals <- mclapply(admsrois, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#RDss
+rdssrois <- mclapply(colnames(RDss)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+rdssrois_pvals <- mclapply(rdssrois, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#RDms
+rdmsrois <- mclapply(colnames(RDms)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+rdmsrois_pvals <- mclapply(rdmsrois, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#ICVF
+icvfrois <- mclapply(colnames(ICVF)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+icvfrois_pvals <- mclapply(icvfrois, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#ISOVF
+ISOVFrois <- mclapply(colnames(ISOVF)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+ISOVFrois_pvals <- mclapply(ISOVFrois, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#ODI
+ODIrois <- mclapply(colnames(ODI)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+ODIrois_pvals <- mclapply(ODIrois, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#RTOP
+rtoprois <- mclapply(colnames(RTOP)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+rtoprois_pvals <- mclapply(rtoprois, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#RTAP
+RTAProis <- mclapply(colnames(RTAP)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+RTAProis_pvals <- mclapply(RTAProis, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#RTPP
+RTPProis <- mclapply(colnames(RTPP)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+RTPProis_pvals <- mclapply(RTPProis, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+```
+
+```{r}
+# models with age
+covariates=" ~sex+meanRELrms+visitagemonths+I(visitagemonths^2)+I(visitagemonths^3)"    
+
+
+#FAss
+fassrois <- mclapply(colnames(FAss)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+fassrois_pvals_a <- mclapply(fassrois, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#FAms
+famsrois <- mclapply(colnames(FAms)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+famsrois_pvals_a <- mclapply(famsrois, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#MDss
+mdssrois <- mclapply(colnames(MDss)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+mdssrois_pvals_a <- mclapply(mdssrois, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#MDms
+mdmsrois <- mclapply(colnames(MDms)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+mdmsrois_pvals_a <- mclapply(mdmsrois, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#ADss
+adssrois <- mclapply(colnames(ADss)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+adssrois_pvals_a <- mclapply(adssrois, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#ADms
+admsrois <- mclapply(colnames(ADms)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+admsrois_pvals_a <- mclapply(admsrois, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#RDss
+rdssrois <- mclapply(colnames(RDss)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+rdssrois_pvals_a <- mclapply(rdssrois, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#RDms
+rdmsrois <- mclapply(colnames(RDms)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+rdmsrois_pvals_a <- mclapply(rdmsrois, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#ICVF
+icvfrois <- mclapply(colnames(ICVF)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+icvfrois_pvals_a <- mclapply(icvfrois, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#ISOVF
+ISOVFrois <- mclapply(colnames(ISOVF)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+ISOVFrois_pvals_a <- mclapply(ISOVFrois, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#ODI
+ODIrois <- mclapply(colnames(ODI)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+ODIrois_pvals_a <- mclapply(ODIrois, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#RTOP
+rtoprois <- mclapply(colnames(RTOP)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+rtoprois_pvals_a <- mclapply(rtoprois, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#RTAP
+RTAProis <- mclapply(colnames(RTAP)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+RTAProis_pvals_a <- mclapply(RTAProis, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+#RTPP
+RTPProis <- mclapply(colnames(RTPP)[2:49], function(x) {as.formula(paste("as.numeric(",x,")", covariates, sep=""))},mc.cores=2)
+RTPProis_pvals_a <- mclapply(RTPProis, function(x) { summary(lm(formula = x,data=df,na.action = na.omit))$r.squared},mc.cores = 1)
+
+```
+
+```{r}
+# difference in r^2 age vs no age models
+# pvals in variable names doesn't actually mean pvals, was too lazy to change variable names from previous iteration
+ssFA_jhu_dif<-unlist(fassrois_pvals_a)-unlist(fassrois_pvals)
+msFA_jhu_dif<-unlist(famsrois_pvals_a)-unlist(famsrois_pvals)
+ssMD_jhu_dif<-unlist(mdssrois_pvals_a)-unlist(mdssrois_pvals)
+msMD_jhu_dif<-unlist(mdmsrois_pvals_a)-unlist(mdmsrois_pvals)
+ssAD_jhu_dif<-unlist(adssrois_pvals_a)-unlist(adssrois_pvals)
+msAD_jhu_dif<-unlist(admsrois_pvals_a)-unlist(admsrois_pvals)
+ssRD_jhu_dif<-unlist(rdssrois_pvals_a)-unlist(rdssrois_pvals)
+msRD_jhu_dif<-unlist(rdmsrois_pvals_a)-unlist(rdmsrois_pvals)
+icvf_jhu_dif<-unlist(icvfrois_pvals_a)-unlist(icvfrois_pvals)
+odi_jhu_dif<-unlist(ODIrois_pvals_a)-unlist(ODIrois_pvals)
+isovf_jhu_dif<-unlist(ISOVFrois_pvals_a)-unlist(ISOVFrois_pvals)
+rtop_jhu_dif<-unlist(rtoprois_pvals_a)-unlist(rtoprois_pvals)
+rtap_jhu_dif<-unlist(RTAProis_pvals_a)-unlist(RTAProis_pvals)
+rtpp_jhu_dif<-unlist(RTPProis_pvals_a)-unlist(RTPProis_pvals)
+
+```
+
+```{r}
+# use ggseg 
+library(ggseg)
+library(ggsegExtra)
+library(ggseg3d)
+library(dplyr)
+library(tidyr)
+
+#  location on this spectrium determined by r^2 dif
+icvfjhu<-data.frame(icvf_jhu_dif)
+
+# remove unknown colum
+icvfjhu<-icvfjhu[-c(1),]
+
+# plot it
+someData = icbm_3d %>% 
+  unnest(ggseg_3d) %>% 
+  select(area) %>% 
+  na.omit() %>% 
+  mutate(p = icvfjhu, nrow(.) %>% 
+           round(2)) 
+  
+  ggseg3d(.data = someData, 
+          atlas = icbm_3d,
+          colour = "p", text = "p",
+          palette = c("white", "#64933b")) %>% 
+    remove_axes() %>% 
+   pan_camera("medial")
+```
+
+```{r}
+library(oro.nifti)
+
+img<-readNIfTI('~/Desktop/MultiSh_Submission/jhu/JHU-ICBM-labels-2mm-PNC.nii.gz')
+
+# alter values to match r^2s
+ssFA_jhu_dif[ssFA_jhu_dif==ssFA_jhu_dif[1]]=0
+for (roi in 1:max(img)) {img[img==roi] <- ssFA_jhu_dif[roi]}
+writeNIfTI(img,'~/Desktop/MultiSh_Submission/jhu/JHU_ssfa')
+
+img<-readNIfTI('~/Desktop/MultiSh_Submission/jhu/JHU-ICBM-labels-2mm-PNC.nii.gz')
+
+msFA_jhu_dif[msFA_jhu_dif==msFA_jhu_dif[1]]=0
+for (roi in 1:max(img)) {img[img==roi] <- msFA_jhu_dif[roi]}
+writeNIfTI(img,'~/Desktop/JHU_msfa')
+
+img<-readNIfTI('~/Desktop/MultiSh_Submission/jhu/JHU-ICBM-labels-2mm-PNC.nii.gz')
+
+ssMD_jhu_dif[ssMD_jhu_dif==ssMD_jhu_dif[1]]=0
+for (roi in 1:max(img)) {img[img==roi] <- ssMD_jhu_dif[roi]}
+writeNIfTI(img,'~/Desktop/MultiSh_Submission/jhu/JHU_ssmd')
+
+img<-readNIfTI('~/Desktop/MultiSh_Submission/jhu/JHU-ICBM-labels-2mm-PNC.nii.gz')
+
+msMD_jhu_dif[msMD_jhu_dif==msMD_jhu_dif[1]]=0
+for (roi in 1:max(img)) {img[img==roi] <- msMD_jhu_dif[roi]}
+writeNIfTI(img,'~/Desktop/MultiSh_Submission/jhu/JHU_msmd')
+
+img<-readNIfTI('~/Desktop/MultiSh_Submission/jhu/JHU-ICBM-labels-2mm-PNC.nii.gz')
+
+ssAD_jhu_dif[ssAD_jhu_dif==ssAD_jhu_dif[1]]=0
+for (roi in 1:max(img)) {img[img==roi] <- ssAD_jhu_dif[roi]}
+writeNIfTI(img,'~/Desktop/MultiSh_Submission/jhu/JHU_ssad')
+
+img<-readNIfTI('~/Desktop/MultiSh_Submission/jhu/JHU-ICBM-labels-2mm-PNC.nii.gz')
+
+msAD_jhu_dif[msAD_jhu_dif==msAD_jhu_dif[1]]=0
+for (roi in 1:max(img)) {img[img==roi] <- msAD_jhu_dif[roi]}
+writeNIfTI(img,'~/Desktop/MultiSh_Submission/jhu/JHU_msad')
+
+img<-readNIfTI('~/Desktop/MultiSh_Submission/jhu/JHU-ICBM-labels-2mm-PNC.nii.gz')
+
+ssRD_jhu_dif[ssRD_jhu_dif==ssRD_jhu_dif[1]]=0
+for (roi in 1:max(img)) {img[img==roi] <- ssRD_jhu_dif[roi]}
+writeNIfTI(img,'~/Desktop/MultiSh_Submission/jhu/JHU_ssrd')
+
+img<-readNIfTI('~/Desktop/MultiSh_Submission/jhu/JHU-ICBM-labels-2mm-PNC.nii.gz')
+
+msRD_jhu_dif[msRD_jhu_dif==msRD_jhu_dif[1]]=0
+for (roi in 1:max(img)) {img[img==roi] <- msRD_jhu_dif[roi]}
+writeNIfTI(img,'~/Desktop/MultiSh_Submission/jhu/JHU_msRD')
+
+img<-readNIfTI('~/Desktop/MultiSh_Submission/jhu/JHU-ICBM-labels-2mm-PNC.nii.gz')
+
+icvf_jhu_dif[icvf_jhu_dif==icvf_jhu_dif[1]]=0
+for (roi in 1:max(img)) {img[img==roi] <- icvf_jhu_dif[roi]}
+writeNIfTI(img,'~/Desktop/MultiSh_Submission/jhu/JHU_icvf')
+
+img<-readNIfTI('~/Desktop/MultiSh_Submission/jhu/JHU-ICBM-labels-2mm-PNC.nii.gz')
+
+isovf_jhu_dif[isovf_jhu_dif==isovf_jhu_dif[1]]=0
+for (roi in 1:max(img)) {img[img==roi] <- isovf_jhu_dif[roi]}
+writeNIfTI(img,'~/Desktop/MultiSh_Submission/jhu/JHU_isovf')
+
+img<-readNIfTI('~/Desktop/MultiSh_Submission/jhu/JHU-ICBM-labels-2mm-PNC.nii.gz')
+
+odi_jhu_dif[odi_jhu_dif==odi_jhu_dif[1]]=0
+for (roi in 1:max(img)) {img[img==roi] <- odi_jhu_dif[roi]}
+writeNIfTI(img,'~/Desktop/MultiSh_Submission/jhu/JHU_odi')
+
+img<-readNIfTI('~/Desktop/MultiSh_Submission/jhu/JHU-ICBM-labels-2mm-PNC.nii.gz')
+
+rtop_jhu_dif[rtop_jhu_dif==rtop_jhu_dif[1]]=0
+for (roi in 1:max(img)) {img[img==roi] <- rtop_jhu_dif[roi]}
+writeNIfTI(img,'~/Desktop/MultiSh_Submission/jhu/JHU_rtop')
+
+img<-readNIfTI('~/Desktop/MultiSh_Submission/jhu/JHU-ICBM-labels-2mm-PNC.nii.gz')
+
+rtap_jhu_dif[rtap_jhu_dif==rtap_jhu_dif[1]]=0
+for (roi in 1:max(img)) {img[img==roi] <- rtap_jhu_dif[roi]}
+writeNIfTI(img,'~/Desktop/MultiSh_Submission/jhu/JHU_rtap')
+
+img<-readNIfTI('~/Desktop/MultiSh_Submission/jhu/JHU-ICBM-labels-2mm-PNC.nii.gz')
+
+rtpp_jhu_dif[rtpp_jhu_dif==rtpp_jhu_dif[1]]=0
+for (roi in 1:max(img)) {img[img==roi] <- rtpp_jhu_dif[roi]}
+writeNIfTI(img,'~/Desktop/MultiSh_Submission/jhu/JHU_rtpp')
+
+```
+
+
+```{r}
+# separate out jhus into bilateral, R and L
+
+bil_ind<-c(3,4,5,6)
+r_ind<-seq(15,47,by=2)
+l_ind<-seq(16,48,by=2)
+
+jhuvals<-cbind(ssFA_jhu_dif,msFA_jhu_dif,ssMD_jhu_dif,msMD_jhu_dif,ssAD_jhu_dif,msAD_jhu_dif,ssRD_jhu_dif,msRD_jhu_dif,icvf_jhu_dif,odi_jhu_dif,isovf_jhu_dif,rtop_jhu_dif,rtap_jhu_dif,rtpp_jhu_dif)
+
+write.csv(jhuvals,'jhuvalues_r2.csv')
+```
+
+```{r}
+#Edge count bar graphs
+edge<-read.csv('~/Desktop/edge_count_new.csv')
+edgetab<-table(edge$modality)
+edge_levels<-names(edgetab)[order(edgetab)]
+edge$modality2<-factor(edge$modality, c("ICVF", "RTPP", "msMD", "RTOP", "RTAP", "ssMD","ISOVF","msRD", "ssRD", "ODI", "msFA", "ssFA","msAD","ssAD"))
+
+ggplot(edge, aes(x=modality2, y=number, fill=fam)) + geom_bar(stat="identity") + scale_fill_manual("Processing Method", values = c("msDTI" = "#4b5e72", "ssDTI" = "#7b98b7", "NODDI" = "#AEBD38", "MAPL" = "#598234"), breaks = c("ssDTI","msDTI","NODDI","MAPL")) + geom_text(aes(label=number),vjust=-0.7,size=7) + labs(x ="Diffusion Metric", y="Edges") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), axis.text.x = element_text(face="bold",size=26, angle = 50, hjust=1, color = "black"), axis.text.y = element_text(face="bold",size=26,color = "black"), axis.title = element_text(size=30), axis.line.x = element_line(colour = 'black', size = 1.5), axis.line.y = element_line(colour = 'black', size = 1.5), legend.position = c(.77,.8), legend.text = element_text(size=20), legend.title = element_text(size = 24))+ ggtitle("Edges Associated with Age") + theme(plot.title = element_text(hjust=0.5, size=33,face="bold"))
+```
