@@ -1,4 +1,4 @@
-This repository is divided into two sets of scripts. Preprocessing takes raw diffusion data through preprocessing and various diffusion model fits. Postprocessing includes comparative analyses aimed at evaluating the relative utility of 14 different diffusion metrics for developmental neuroimaging. Further detail below.
+This repository is divided into two sets of scripts. Preprocessing takes raw diffusion data through preprocessing, DTI, and NODDI model fits. Postprocessing includes comparative analyses aimed at evaluating the relative utility of 14 different diffusion metrics for developmental neuroimaging. Postprocessing also includes MAPL fits. Further detail below.
 
 # Preprocessing:
 ### Multishell_Preproc
@@ -14,13 +14,16 @@ AMICO (Daducci et al., 2015) framework adapted for current dataset/file structur
 ### index
 value of 1 x number of TRs for eddy input
 ### qa*
-series of quality assurance scripts from https://www.med.upenn.edu/cmroi/qascripts.html, requires fsl and afni
+series of quality assurance scripts from www.med.upenn.edu/cmroi/qascripts.html, requires fsl and afni
 ### runAmico 
 just runs AMICO(Matlab) on an SGE
 ### slsspec_gen
 generates file with basic scan sequence info
 wrap_MultiShell_PreProc
 For parallel job submission to SGE
+
+## Software Utilized for Preprocessing
+FSL (fsl.fmrib.ox.ac.uk/fsl/fslwiki), AFNI (afni.nimh.nih.gov/), NODDI via AMICO (github.com/daducci/AMICO_matlab), ANTs (stnava.github.io/ANTs/), mrtrix (www.mrtrix.org/). For more information on whose work we were heavily dependent on, please reference our manuscript (biorxiv.org/content/10.1101/611590v2).
 
 # Postprocessing:
 ### Rsquared_diff
@@ -57,4 +60,7 @@ wrapper for parallel job submission of standard space affines + warps
 wrapper for parallel job submission of scalar spatial correlations
 ### wrap_determTract
 wrapper for parallel job submission of deterministic tractography
+
+## Software Utilized for Postprocessing
+dipy (dipy.org), camino (camino.cs.ucl.ac.uk/), and a ton of R packages including mgcv, visreg, ggplot2, scales, parallel, corrplot, gratia, dplyr, svglite, cowplot, oronifti, and voxelwise.
 
